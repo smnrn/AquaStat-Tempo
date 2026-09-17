@@ -1,0 +1,22 @@
+# AquaStat ETL Pipeline — Python dependencies
+# Install with:  pip install -r etl/requirements.txt
+
+# Core data processing
+pandas>=2.1.0
+numpy>=1.26.0
+openpyxl>=3.1.2          # required by pandas for .xlsx support
+xlrd>=2.0.1              # required by pandas for legacy .xls support
+
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9   # PostgreSQL adapter (binary wheel, no C compiler needed)
+
+# Environment / configuration
+python-dotenv>=1.0.0
+
+# HTTP client (for PAGASA weather API)
+requests>=2.31.0
+urllib3>=2.0.0            # used by requests; pinned for retry compatibility
+
+# Optional: faster Parquet serialisation for intermediate checkpoints
+# pyarrow>=14.0.0

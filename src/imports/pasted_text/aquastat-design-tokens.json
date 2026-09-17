@@ -1,0 +1,150 @@
+Role: Senior UI/UX Product Designer & Design Systems Lead
+Project: AquaStat — Data-Driven Water Supply Forecasting & Demand Optimization Decision Support System (DSS)
+Client: Tabaco City Water District (TCWD), Albay, Philippines
+Design Tone: Modern, human-centric, high-utility enterprise SaaS (clean Tailwind/shadcn aesthetic, zero generic AI clichés, WCAG AAA contrast, fluid micro-interactions).
+
+[COLOR & STYLING SYSTEM]
+- Primary Color: #0038A8 (TCWD Royal Blue)[cite: 1]
+- Alert & Critical Accent: #D32F2F (TCWD Crimson Red)[cite: 1]
+- Secondary Accent: #0284C7 (Sky Blue)
+- Base Background: #F8FAFC (Soft Cool Canvas)
+- Card Containers: #FFFFFF with 1px border (#E2E8F0) and rounded-xl (12px) corners
+- Typography: Inter or Plus Jakarta Sans with tabular figures for numbers
+- Navigation: Persistent Left Sidebar (width: 260px, collapsible to 80px)[cite: 1]
+
+[GLOBAL SHELL ARCHITECTURE]
+1. Left Navigation Sidebar:
+   - Header: TCWD Official Circular Logo + "AquaStat" bold title + subtitle "Tabaco City Water District"[cite: 1]
+   - Active Tab Indicator: Smooth pill indicator in TCWD Blue with soft glow (#0038A815)
+   - Menu Items (with clear Lucide-style vector icons):
+     1. Dashboard[cite: 1]
+     2. Descriptive (Data Overview)[cite: 1]
+     3. Predictive (Demand Forecasting)[cite: 1]
+     4. Shortage (Supply & Shortage Monitoring)[cite: 1]
+     5. Weather (Weather & Climate)[cite: 1]
+     6. NRW Map (Non-Revenue Water Hotspots)[cite: 1]
+     7. Zones (Service Zone Analysis)[cite: 1]
+     8. Optimization (Prescriptive Pump Schedules)[cite: 1]
+     9. Alerts (Operational Risk Notifications) [with Crimson numeric badge][cite: 1]
+     10. Export (Report Generation)[cite: 1]
+   - Footer: System version, logged-in operator credentials ("J. Reyes - Operations Manager"), and secure session status indicator.
+
+2. Global Top Navbar:
+   - Breadcrumb navigation (e.g., AquaStat / Predictive / Demand Forecasting)
+   - Search bar: "Search zone, barangay, account no., or date..."
+   - Quick Status Widget: Live PAGASA temperature badge, current Albay time (PHT), active notifications bell, and user profile avatar.
+
+---
+
+[DETAILED SCREEN SPECIFICATIONS]
+
+SCREEN 1: SECURE LOGIN CONSOLE (3.6.1)
+- Layout: Split-screen desktop design[cite: 1].
+  - Left Panel (60%): Deep TCWD Blue gradient canvas featuring water wave geometry, TCWD logo, headline: "Smarter water operations for Tabaco City."[cite: 1], and subtext: "Monitor non-revenue water, forecast demand, and act on rule-based recommendations across all 20 service zones — from a single, secure operations console."[cite: 1]
+  - Right Panel (40%): Minimalist white card containing "Sign In" header, "Welcome back" subtitle, form inputs for Username and Password with eye toggle, "Remember this device" checkbox, "Forgot password?" link, high-contrast TCWD Blue "Sign In" primary button, and security disclaimer: "Authorized Personnel Only — All sessions are encrypted."[cite: 1]
+
+SCREEN 2: EXECUTIVE MAIN DASHBOARD (3.6.2)
+- Header: "Dashboard — Tabaco City Water District" with date filter (e.g., September 2025) and "Refresh Data" button[cite: 1].
+- Top KPI Summary Grid (4 Cards):
+  1. Total Accounts: "10,000" (+0.8% vs previous month sparkline)[cite: 1]
+  2. Total Consumption: "193,748 m³" (+1.1% vs baseline sparkline)[cite: 1]
+  3. Total Revenue: "₱5,249,087" (+0.6% vs target sparkline)[cite: 1]
+  4. Average per Account: "19.4 m³" (steady consumption trend)[cite: 1]
+- Main Content Layout (2-Column Grid):
+  - Left Column (65%):
+    - Horizontal Bar Chart: "Consumption by Zone — Sep 2025" ranking Zone 2, Zone 1, Zone 7, Zone 15, Zone 21 down to Zone 12[cite: 1].
+    - Area/Bar Trend Chart: "Annual Consumption Trend (2017 to 2025)" with seasonal dry/wet highlighting[cite: 1].
+  - Right Column (35%):
+    - Non-Revenue Water (NRW) Status Card: Circular/Semi-gauge displaying current system-wide NRW at "28.0%" (Target benchmark: LWUA standard <=20%), Breakdown: Billed volume vs. NRW loss volume (74,077 m³), and Estimated Monthly Revenue Loss ("₱1.78M/mo")[cite: 1].
+    - Customer Class Donut Chart: Residential (139,186 m³ / 71.8%), Commercial (9,849 m³), Government (18,324 m³), Semi-Commercial (4,722 m³)[cite: 1].
+    - Active Operational Alerts Card: List of top 4 ML-flagged anomalies with severity indicators[cite: 1].
+
+SCREEN 3: DATA OVERVIEW / DESCRIPTIVE ANALYTICS (3.6.3)
+- Purpose: Answer "What happened?" using historical billing and bulk production data (2017-2025)[cite: 1].
+- Controls: Month/Year picker (2017–2025), Customer class filter tags (Residential, Commercial, Semi-Commercial, Government), "Apply Filters" button[cite: 1].
+- Widgets:
+  1. Customer Class Volume vs Revenue Dual Breakdown: Horizontal comparative metric bars showing cubic meters billed vs PHP billed per segment[cite: 1].
+  2. Historical Consumption Matrix Heatmap: 12-month calendar matrix (Oct 2024 to Sep 2025) across all 20 service zones, color-coded by intensity from light slate blue to deep indigo[cite: 1].
+  3. Top 5 Highest-Consuming Accounts Table: Account ID, Zone, Customer Class, Monthly m³, Total Bill (PHP), and anomaly tags (e.g., "ACC-00023 — 82% above government avg, Flag for audit")[cite: 1].
+  4. Infrastructure Breakdown: Meter Size Distribution bar graph & Billing Rate Validation scatter plot[cite: 1].
+
+SCREEN 4: DEMAND FORECASTING DASHBOARD / PREDICTIVE ANALYTICS (3.6.4)
+- Purpose: Compare time-series models (SARIMA, LSTM, Prophet) and forecast short-term water demand thresholds[cite: 1].
+- Model Selection Tabs: [SARIMA (Selected)] | [Multivariate LSTM] | [Meta Prophet] | [Ensemble Model][cite: 1].
+- Primary Interactive Chart:
+  - Multi-line visualization showing "Historical Demand (2017-2025)" in solid dark blue transitioning into "Forecasted Demand (Q4 2025 - 2026)" in dashed sky blue, surrounded by a 95% Confidence Interval shaded band[cite: 1]. Vertical demarcation for "Current Date / Forecast Origin"[cite: 1].
+- Model Accuracy Scorecards:
+  - RMSE: 4,521 m³[cite: 1]
+  - MAPE: 3.24% (Within high prediction accuracy benchmark)[cite: 1]
+  - MAE: 3,876 m³[cite: 1]
+  - Best Model Indicator: "LSTM selected for high non-linear dry season variance"[cite: 1].
+- Anomaly Forecasting Table: "Demand Spike Predictions — Next 3 Months" showing Target Month, Service Zone, Predicted Volume (m³), % Spike over baseline, Confidence Level, and Risk Level (Critical / Moderate / Normal)[cite: 1].
+
+SCREEN 5: SUPPLY & SHORTAGE MONITORING (3.6.5)
+- Purpose: Contrast predicted demand against physical pump station production capacities[cite: 1].
+- Capacity Summary Banner: Total System Capacity (300,000 m³/mo rated | 85% sustainable = 255,000 m³), Current Demand (193,748 m³), Predicted Dry Season Gap (41,800 m³ across 4 critical months)[cite: 1].
+- Dynamic Area Line Chart: "Supply vs Demand Forecast (Jan 2025 - Mar 2026)" mapping Total Sustainable Water Yield (solid blue line) vs. Predicted Demand (dotted red line)[cite: 1]. Highlight the intersecting shortage zone in translucent crimson red[cite: 1].
+- Status Indicator Bar: Current Status: "Within Capacity" | Days to Next Predicted Deficit: "48 Days (Jan 2026)" | Active Shortage Service Zones: "0 (Predicted: 3)"[cite: 1].
+
+SCREEN 6: NON-REVENUE WATER (NRW) HOTSPOT MAP (3.6.6)
+- Purpose: Pinpoint physical leaks, commercial losses, and meter discrepancies[cite: 1].
+- Spatial Grid & Choropleth Matrix: Interactive 20-zone geographical grid of Tabaco City barangays color-coded by NRW Loss %[cite: 1]:
+  - Green: Healthy (<15% NRW)
+  - Yellow: Moderate (15% - 20% NRW)
+  - Crimson Red: Critical (>20% NRW Hotspot)
+- Zone Detail Flyout / Table:
+  - Ranking list of zones by NRW loss % (Zone 1: 24.2%, Zone 2: 27.0%, Zone 15: 22.3%, Zone 20: 20.4%)[cite: 1].
+  - Sparklines showing 6-month historical loss trajectories[cite: 1].
+- Discrepancy Bar Graph: "Total Production vs. Billed Consumption by Service Zone" showing clear volume gaps representing non-revenue water[cite: 1].
+
+SCREEN 7: SERVICE ZONE ANALYSIS (3.6.7)
+- Purpose: Granular behavioral and consumption profiling per barangay/district[cite: 1].
+- Layout: Responsive 4x5 card grid representing all 20 TCWD service zones[cite: 1].
+- Individual Zone Card Contents:
+  - Zone Number (e.g., Zone 02 - Brgy. Panal / Poblacion)[cite: 1]
+  - Status Tag: [HIGH RISK - CRITICAL] or [NORMAL][cite: 1]
+  - Current Monthly Consumption: "15,890 m³"[cite: 1]
+  - Mini Trend Sparkline[cite: 1]
+  - Active Connections count & Population density index.
+- Zone Drill-Down Modal / View:
+  - 10-year monthly consumption trendline[cite: 1]
+  - Customer class distribution pie chart[cite: 1]
+  - Top 10 individual high-consumption accounts within that specific zone[cite: 1].
+
+SCREEN 8: PRESCRIPTIVE OPTIMIZATION & RECOMMENDATIONS (3.6.8)
+- Purpose: Linear Programming (LP) driven pump scheduling and Multi-Criteria Decision Analysis (MCDA) water allocation matrices[cite: 1].
+- Header Banner: "LP Model Output — Optimized pump scheduling and water allocation based on forecasted demand; Objective: Minimize Total Power Operating Cost (PHP)."[cite: 1]
+- Primary Table: "Recommended Pump Schedule — October 2025"[cite: 1]
+  - Columns: Time Block (12AM-6AM, 6AM-12PM, 12PM-6PM, 6PM-12AM), Pumping Station Name (Main Pump Station, Booster Station A, Booster Station B), Current Run Hours, Recommended Optimized Run Hours, Variance (Δ), Estimated Power Cost (PHP), Projected Cost Reduction (%)[cite: 1].
+  - Footer: Total Pumping Hours & Total Monthly Power Savings (₱84,350/mo, -14.2% energy expenditure).
+- Secondary Grid: "Water Allocation & Rationing Priority Matrix"[cite: 1]
+  - 20-Zone table detailing baseline flow rate, optimized flow rate, and MCDA vulnerability priority score for scheduled maintenance or dry-season rotation[cite: 1].
+- Action Panel: "Actionable Operational Directives" (e.g., "Shift Zone 21 pumping by 2h to off-peak power tariff window — Save ₱27,000/mo")[cite: 1].
+
+SCREEN 9: ALERTS & OPERATIONAL NOTIFICATIONS (3.6.9)
+- Purpose: Centralized monitoring and escalation hub for TCWD management review[cite: 1].
+- Filter Tabs: [All Alerts (8)] | [Critical Shortages (2)] | [NRW Outliers (3)] | [Pump Maintenance (2)] | [Resolved (14)].
+- Alert Card Architecture:
+  - Left border indicator color-coded by severity (Crimson = Critical, Amber = Warning, Blue = Info).
+  - Alert Headline: e.g., "Zone 2 NRW exceeds 20% threshold — ML Confirmed (Isolation Forest flag)"[cite: 1].
+  - Context & Details: "Detected loss gap of 4,200 m³. Correlates with drop in pump discharge pressure at Station 2."[cite: 1]
+  - Metadata: Zone ID, Detection Timestamp, Algorithm Source (SARIMA / LSTM / K-Means)[cite: 1].
+  - Action Buttons: [Approve Operational Adjustment] [Dispatch Field Inspection] [Dismiss / Log].
+
+SCREEN 10: DATA EXPORT & REPORT BUILDER (3.6.10)
+- Purpose: Executive reporting, regulatory compliance (LWUA), and operational documentation[cite: 1].
+- Configuration Step Flow:
+  1. Report Type Selection Cards: Demand Forecast Report, NRW Assessment Report, Monthly Operational Summary, Custom Query Audit[cite: 1].
+  2. Period & Scope Pickers: Start Date, End Date, Service Zone multi-select checkboxes (All 20 zones or custom subsets), Customer class filters[cite: 1].
+  3. Output Format Selector: Modern selectable cards for PDF (Executive Slide & Document Layout), CSV (Raw Data Tabular), and Excel (.xlsx formatted workbooks)[cite: 1].
+  4. AI-Generated Executive Summary Preview: Collapsible preview showing auto-generated narrative insights ("Dry season consumption anticipated to peak in April 2026 with +18% variance in Zone 1...")[cite: 1].
+  5. Primary CTA: "Generate & Download Report" with progress bar animation.
+
+SCREEN 11: WEATHER & CLIMATE CORRELATION (3.6.11)
+- Purpose: Real-time PAGASA meteorological API integration to account for weather regressors in forecasting[cite: 1].
+- Top Live Weather Banner: Current Weather condition icon (e.g., "Partly Cloudy in Tabaco City"), Temperature (33°C), Heat Index, Humidity (78%), Wind Speed (18 kph), Station ID: PAGASA Legazpi/Tabaco Doppler[cite: 1].
+- 10-Day Forecast Carousel: 10 vertical cards showing day, date, weather icon, high/low temperature bar, and precipitation probability percentage[cite: 1].
+- Analytical Correlation Charts (2-Column):
+  - Left: Temperature vs. Daily Water Demand (2017-2025 scatter & regression curve demonstrating direct positive correlation r = 0.72 during peak heat)[cite: 1].
+  - Right: Rainfall vs. Non-Revenue Water Seasonal Pattern (demonstrating ground saturation and seasonal pipe stress)[cite: 1].
+- Historical Typhoon & Extreme Weather Log: Data table documenting past Albay typhoon events (e.g., Super Typhoon Rolly, Typhoon Reming), recorded rainfall volumes, and historical water district recovery durations[cite: 1].

@@ -1,0 +1,70 @@
+{
+  "compilerOptions": {
+    /* ─── Language & Environment ─────────────────────────────── */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "CommonJS",
+    // "Node10" is the canonical name for the classic Node resolution
+    // strategy in TypeScript 5.x — identical to "Node" but avoids the
+    // deprecation warning raised by newer IDE language-server versions.
+    "moduleResolution": "Node10",
+
+    /* ─── Output ─────────────────────────────────────────────── */
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+
+    /* ─── Strict Type-Checking ────────────────────────────────── */
+    // "strict": true already enables the six flags below.
+    // We list them explicitly only as documentation — they are not redundant
+    // because explicit beats implicit for maintainability.
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+
+    /* ─── Additional Checks ──────────────────────────────────── */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* ─── Emit ───────────────────────────────────────────────── */
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+
+    /* ─── Path Aliases ───────────────────────────────────────── */
+    // baseUrl must be set for paths to work.
+    // Note: "@types/*" is intentionally removed — it conflicts with
+    // TypeScript's internal @types/ namespace resolution and causes
+    // IDE language-server warnings. Use "@appTypes/*" instead.
+    "baseUrl": ".",
+    "paths": {
+      "@/*":            ["src/*"],
+      "@config/*":      ["src/config/*"],
+      "@controllers/*": ["src/controllers/*"],
+      "@routes/*":      ["src/routes/*"],
+      "@services/*":    ["src/services/*"],
+      "@database/*":    ["src/database/*"],
+      "@middleware/*":  ["src/middleware/*"],
+      "@appTypes/*":    ["src/types/*"],
+      "@utils/*":       ["src/utils/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}
