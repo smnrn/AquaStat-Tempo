@@ -19,3 +19,6 @@ tensorflow>=2.15.0
 # Operations Research (Linear Programming)
 pulp>=2.7.0
 joblib>=1.3.0
+
+# Prophet (Optional but recommended)
+prophet>=1.1.5

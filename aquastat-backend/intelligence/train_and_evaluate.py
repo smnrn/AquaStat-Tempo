@@ -54,7 +54,7 @@ try:
     PROPHET_AVAILABLE = True
 except ImportError:
     try:
-        from fbprophet import Prophet  # Legacy alias
+        from fbprophet import Prophet  # type: ignore # Legacy alias
         PROPHET_AVAILABLE = True
     except ImportError:
         PROPHET_AVAILABLE = False
@@ -64,6 +64,10 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("aquastat.predictive_engine")
+
+RMSE_LITERAL = "RMSE (m³)"
+MAPE_LITERAL = "MAPE (%)"
+MAE_LITERAL = "MAE (m³)"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -88,24 +92,24 @@ def load_or_generate_dataset(filepath: Optional[str] = None) -> pd.DataFrame:
         return df
 
     logger.info("Generating synthetic empirical time-series for Tabaco City (2024-2026)...")
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     dates = pd.date_range(start="2024-01-01", end="2026-08-25", freq="D")
     n = len(dates)
 
     # Weather simulation matching Bicol/Albay climatology (Tropical monsoon)
     day_of_year = dates.dayofyear.values
     # Temperature: seasonal peak in May (32-34°C), cooler in Jan (26-28°C)
-    temp = 28.5 + 3.0 * np.sin(2 * np.pi * (day_of_year - 60) / 365.25) + np.random.normal(0, 1.2, n)
+    temp = 28.5 + 3.0 * np.sin(2 * np.pi * (day_of_year - 60) / 365.25) + rng.normal(0, 1.2, n)
     # Rainfall: Habagat / Typhoon season (July-Dec) vs Dry (Feb-May)
     rain_base = 5.0 + 15.0 * np.maximum(0, np.sin(2 * np.pi * (day_of_year - 150) / 365.25))
-    rainfall = np.random.exponential(scale=rain_base)
+    rainfall = rng.exponential(scale=rain_base)
 
     # Water Demand baseline: 6,400 m³/day + weekly cycle + weather sensitivity
     dow = dates.dayofweek.values
     weekly_pattern = np.array([0, 150, 200, 220, 280, 350, -100])[dow] # Weekend vs weekday
     temp_effect = np.maximum(0, temp - 28.0) * 192.0                   # +192 m³ per °C > 28°C
     rain_effect = -(rainfall / 10.0) * 85.0                            # -85 m³ per 10mm rain
-    noise = np.random.normal(0, 180, n)
+    noise = rng.normal(0, 180, n)
 
     consumption = 6400.0 + weekly_pattern + temp_effect + rain_effect + (np.arange(n) * 0.45) + noise
     consumption = np.maximum(4000.0, consumption)
@@ -222,19 +226,19 @@ class MultivariateLSTMForecaster:
         self.model: Optional[Sequential] = None
 
     def _create_sequences(self, data: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        X, y = [], []
+        x, y = [], []
         for i in range(len(data) - self.look_back):
-            X.append(data[i:(i + self.look_back), :])
+            x.append(data[i:(i + self.look_back), :])
             y.append(data[i + self.look_back, 0]) # Target is index 0: consumption_m3
-        return np.array(X), np.array(y)
+        return np.array(x), np.array(y)
 
     def fit(self, train_df: pd.DataFrame):
         logger.info(f"[Multivariate LSTM] Building & training network (Lookback={self.look_back})...")
         features = train_df[["consumption_m3", "temperature_c", "rainfall_mm"]].values
         scaled_features = self.scaler.fit_transform(features)
 
-        X_train, y_train = self._create_sequences(scaled_features)
-        n_features = X_train.shape[2]
+        x_train, y_train = self._create_sequences(scaled_features)
+        n_features = x_train.shape[2]
 
         self.model = Sequential([
             LSTM(64, activation="relu", return_sequences=True, input_shape=(self.look_back, n_features)),
@@ -248,7 +252,7 @@ class MultivariateLSTMForecaster:
 
         early_stopping = EarlyStopping(monitor="val_loss", patience=6, restore_best_weights=True)
         self.model.fit(
-            X_train, y_train,
+            x_train, y_train,
             epochs=self.epochs,
             batch_size=self.batch_size,
             validation_split=0.15,
@@ -267,13 +271,13 @@ class MultivariateLSTMForecaster:
         n_test = len(full_df) - test_start_idx
 
         # Vectorized sliding-window extraction
-        X_test = []
+        x_test = []
         for t in range(n_test):
             window = scaled_features[test_start_idx + t - self.look_back : test_start_idx + t]
-            X_test.append(window)
+            x_test.append(window)
 
-        X_test_tensor = np.array(X_test)
-        scaled_preds = self.model.predict(X_test_tensor, batch_size=64, verbose=0)[:, 0]
+        x_test_tensor = np.array(x_test)
+        scaled_preds = self.model.predict(x_test_tensor, batch_size=64, verbose=0)[:, 0]
 
         # Inverse transform
         dummy = np.zeros((n_test, scaled_features.shape[1]))
@@ -297,10 +301,10 @@ class ProphetForecaster:
             logger.warning("[Prophet] 'prophet' package not installed in environment; using Generalized Additive fallback.")
             self.model = "FALLBACK"
             # Train internal additive linear weights
-            X = train_df[["temperature_c", "rainfall_mm"]].values
+            x = train_df[["temperature_c", "rainfall_mm"]].values
             y = train_df["consumption_m3"].values
-            X_aug = np.column_stack([np.ones(len(y)), X])
-            self.weights = np.linalg.lstsq(X_aug, y, rcond=None)[0]
+            x_aug = np.column_stack([np.ones(len(y)), x])
+            self.weights = np.linalg.lstsq(x_aug, y, rcond=None)[0]
             return self
 
         p_df = pd.DataFrame({
@@ -324,9 +328,9 @@ class ProphetForecaster:
 
     def predict(self, test_df: pd.DataFrame) -> np.ndarray:
         if self.model == "FALLBACK":
-            X_test = test_df[["temperature_c", "rainfall_mm"]].values
-            X_aug = np.column_stack([np.ones(len(X_test)), X_test])
-            preds = np.dot(X_aug, self.weights)
+            x_test = test_df[["temperature_c", "rainfall_mm"]].values
+            x_aug = np.column_stack([np.ones(len(x_test)), x_test])
+            preds = np.dot(x_aug, self.weights)
             return np.maximum(0.0, preds)
 
         future_df = pd.DataFrame({
@@ -413,10 +417,10 @@ def run_predictive_evaluation_pipeline(data_path: Optional[str] = None):
 
     # 6. Tabulate Benchmark Results
     results_summary = pd.DataFrame([
-        {"Model": "SARIMAX (p=1,d=1,q=1,s=7)",  "RMSE (m³)": metrics_sarimax["RMSE"], "MAPE (%)": f"{metrics_sarimax['MAPE']:.2f}%", "MAE (m³)": metrics_sarimax["MAE"]},
-        {"Model": "Multivariate LSTM (2-layer)", "RMSE (m³)": metrics_lstm["RMSE"],    "MAPE (%)": f"{metrics_lstm['MAPE']:.2f}%",    "MAE (m³)": metrics_lstm["MAE"]},
-        {"Model": "Meta Prophet (Additive)",    "RMSE (m³)": metrics_prophet["RMSE"], "MAPE (%)": f"{metrics_prophet['MAPE']:.2f}%", "MAE (m³)": metrics_prophet["MAE"]},
-        {"Model": "Stacking Ensemble (Weighted)","RMSE (m³)": metrics_ensemble["RMSE"],"MAPE (%)": f"{metrics_ensemble['MAPE']:.2f}%","MAE (m³)": metrics_ensemble["MAE"]},
+        {"Model": "SARIMAX (p=1,d=1,q=1,s=7)",  RMSE_LITERAL: metrics_sarimax["RMSE"], MAPE_LITERAL: f"{metrics_sarimax['MAPE']:.2f}%", MAE_LITERAL: metrics_sarimax["MAE"]},
+        {"Model": "Multivariate LSTM (2-layer)", RMSE_LITERAL: metrics_lstm["RMSE"],    MAPE_LITERAL: f"{metrics_lstm['MAPE']:.2f}%",    MAE_LITERAL: metrics_lstm["MAE"]},
+        {"Model": "Meta Prophet (Additive)",    RMSE_LITERAL: metrics_prophet["RMSE"], MAPE_LITERAL: f"{metrics_prophet['MAPE']:.2f}%", MAE_LITERAL: metrics_prophet["MAE"]},
+        {"Model": "Stacking Ensemble (Weighted)",RMSE_LITERAL: metrics_ensemble["RMSE"],MAPE_LITERAL: f"{metrics_ensemble['MAPE']:.2f}%",MAE_LITERAL: metrics_ensemble["MAE"]},
     ])
 
     print("\n" + "=" * 80)
