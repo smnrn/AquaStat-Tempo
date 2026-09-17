@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from "react"
 import { toast, Toaster } from "sonner"
 import { motion, AnimatePresence } from "motion/react"
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback"
+import { ImageWithFallback } from "@/app/components/ui/ImageWithFallback"
 import tcwdSeal from "@/imports/image-8.png"
 import {
   LayoutDashboard, BarChart3, TrendingUp, Droplets, CloudSun, Map,
@@ -218,10 +218,12 @@ const SCREEN_LABELS: Record<ScreenId, string> = {
 function useCountUp(target: string, duration = 1100): string {
   const [val, setVal] = useState("0")
   useEffect(() => {
+    if (!target) { setVal("0"); return }
     const parts = target.replace(/,/g, "").match(/^([₱]?)([\d]+\.?[\d]*)([kMm]?)(.*)$/)
     if (!parts) { setVal(target); return }
     const [, prefix, num, suffix, rest] = parts
     const end = parseFloat(num)
+    if (isNaN(end)) { setVal(target); return }
     const isFloat = target.includes(".")
     const decimals = isFloat ? (target.split(".")[1]?.replace(/\D/g, "").length ?? 1) : 0
     const t0 = performance.now()
@@ -353,7 +355,7 @@ function ChartTip({ active, payload, label, fmt }: {
             <span className="text-slate-500">{item.name}</span>
           </div>
           <span className="font-mono font-semibold text-slate-800">
-            {fmt ? fmt(item.value, item.name) : item.value.toLocaleString()}
+            {fmt ? fmt(item.value, item.name) : (typeof item.value === 'number' ? item.value.toLocaleString() : (item.value ?? '-'))}
           </span>
         </div>
       ))}
