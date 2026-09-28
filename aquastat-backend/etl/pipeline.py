@@ -56,9 +56,7 @@ logging.basicConfig(
 logger = logging.getLogger("aquastat.etl.pipeline")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# ORCHESTRATOR
-# ──────────────────────────────────────────────────────────────────────────────
+# Orchestrator
 
 def run_pipeline(
     billing_files:     List[str],

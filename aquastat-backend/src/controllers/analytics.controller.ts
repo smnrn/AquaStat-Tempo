@@ -40,8 +40,8 @@ export async function getZoneBillingSummary(
       );
     }
 
-    const month = parseInt(req.query['month'] as string, 10);
-    const year = parseInt(req.query['year'] as string, 10);
+    const month = Number.parseInt(req.query['month'] as string, 10);
+    const year = Number.parseInt(req.query['year'] as string, 10);
 
     const data = await AnalyticsService.getZoneBillingAnalytics(month, year);
     sendSuccess(res, data);

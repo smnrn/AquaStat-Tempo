@@ -35,8 +35,8 @@ interface ConstellationProductionRow {
 }
 
 function mapRow(row: ConstellationProductionRow): ProductionRecord {
-  const volume = parseFloat(row.produced_volume_m3);
-  const power = parseFloat(row.power_consumed_kwh);
+  const volume = Number.parseFloat(row.produced_volume_m3);
+  const power = Number.parseFloat(row.power_consumed_kwh);
   // Estimate NRW benchmark based on production volume and zone characteristic
   const nrwPercentage = 24.5;
   const nrwVolume = volume * (nrwPercentage / 100);
@@ -105,7 +105,7 @@ export async function getProductionRecords(
      ${where}`,
     values
   );
-  const total = parseInt(countResult.rows[0]?.count ?? '0', 10);
+  const total = Number.parseInt(countResult.rows[0]?.count ?? '0', 10);
 
   const dataResult = await query<ConstellationProductionRow>(
     `SELECT 
@@ -305,10 +305,10 @@ export async function getPythonModelInput(
     lookbackDays,
     series: result.rows.map(r => ({
       date: r.full_date,
-      volumeProducedM3: parseFloat(r.produced_volume_m3),
-      powerKwh: parseFloat(r.power_consumed_kwh),
-      tempC: r.temperature_celsius ? parseFloat(r.temperature_celsius) : null,
-      rainfallMm: r.rainfall_mm ? parseFloat(r.rainfall_mm) : null,
+      volumeProducedM3: Number.parseFloat(r.produced_volume_m3),
+      powerKwh: Number.parseFloat(r.power_consumed_kwh),
+      tempC: r.temperature_celsius ? Number.parseFloat(r.temperature_celsius) : null,
+      rainfallMm: r.rainfall_mm ? Number.parseFloat(r.rainfall_mm) : null,
     })),
   };
 }

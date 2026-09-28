@@ -101,7 +101,6 @@ def _build_session() -> requests.Session:
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
     session.mount("https://", adapter)
-    session.mount("http://",  adapter)
 
     return session
 
@@ -198,39 +197,24 @@ def _parse_observations(raw_response: dict) -> pd.DataFrame:
         return pd.DataFrame()
 
     df = pd.json_normalize(records)
+    return _clean_weather_dataframe(df)
 
-    # ── Rename fields to canonical internal names ───────────────────────────
+
+def _clean_weather_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     rename_map = {
-        # Station identifiers
-        "station_id":      "station_id",
-        "stationId":       "station_id",
-        "station_name":    "station_name",
-        "stationName":     "station_name",
-        # Date
-        "date":            "obs_date",
-        "observation_date":"obs_date",
-        "obsDate":         "obs_date",
-        # Temperature
-        "max_temp_c":      "temp_max_c",
-        "maxTemp":         "temp_max_c",
-        "min_temp_c":      "temp_min_c",
-        "minTemp":         "temp_min_c",
-        "mean_temp_c":     "temp_mean_c",
-        "meanTemp":        "temp_mean_c",
-        # Rainfall
-        "rainfall_mm":     "rainfall_mm",
-        "rainfall":        "rainfall_mm",
-        "rain_mm":         "rainfall_mm",
-        "precipitation_mm":"rainfall_mm",
-        # Extras (useful as additional regressors)
-        "humidity_pct":    "humidity_pct",
-        "relHumidity":     "humidity_pct",
-        "wind_speed_kmh":  "wind_speed_kmh",
-        "windSpeed":       "wind_speed_kmh",
+        "station_id": "station_id", "stationId": "station_id",
+        "station_name": "station_name", "stationName": "station_name",
+        "date": "obs_date", "observation_date": "obs_date", "obsDate": "obs_date",
+        "max_temp_c": "temp_max_c", "maxTemp": "temp_max_c",
+        "min_temp_c": "temp_min_c", "minTemp": "temp_min_c",
+        "mean_temp_c": "temp_mean_c", "meanTemp": "temp_mean_c",
+        "rainfall_mm": "rainfall_mm", "rainfall": "rainfall_mm",
+        "rain_mm": "rainfall_mm", "precipitation_mm": "rainfall_mm",
+        "humidity_pct": "humidity_pct", "relHumidity": "humidity_pct",
+        "wind_speed_kmh": "wind_speed_kmh", "windSpeed": "wind_speed_kmh",
     }
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
 
-    # ── Type coercion ───────────────────────────────────────────────────────
     if "obs_date" in df.columns:
         df["obs_date"] = pd.to_datetime(df["obs_date"], errors="coerce")
 
@@ -239,33 +223,24 @@ def _parse_observations(raw_response: dict) -> pd.DataFrame:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # ── Derive temp_mean_c if missing but min/max are present ───────────────
-    if "temp_mean_c" not in df.columns or df["temp_mean_c"].isna().all():
-        if {"temp_max_c", "temp_min_c"}.issubset(df.columns):
-            df["temp_mean_c"] = (df["temp_max_c"] + df["temp_min_c"]) / 2.0
-            logger.info("temp_mean_c derived as (max + min) / 2.")
+    if ("temp_mean_c" not in df.columns or df["temp_mean_c"].isna().all()) and {"temp_max_c", "temp_min_c"}.issubset(df.columns):
+        df["temp_mean_c"] = (df["temp_max_c"] + df["temp_min_c"]) / 2.0
 
-    # ── Physical bounds validation ──────────────────────────────────────────
-    # Philippines temperature range: ~15°C (Benguet highlands) to ~40°C (lowlands)
+    _validate_weather_bounds(df)
+    return df
+
+
+def _validate_weather_bounds(df: pd.DataFrame) -> None:
     for col in ("temp_max_c", "temp_min_c", "temp_mean_c"):
         if col in df.columns:
             mask = (df[col] < 0) | (df[col] > 50)
             if mask.any():
-                logger.warning(
-                    "Weather: %d physically implausible '%s' value(s) set to NaN.", mask.sum(), col
-                )
                 df.loc[mask, col] = np.nan
 
-    # Rainfall must be non-negative
     if "rainfall_mm" in df.columns:
         mask = df["rainfall_mm"] < 0
         if mask.any():
-            logger.warning(
-                "Weather: %d negative rainfall value(s) set to 0.", mask.sum()
-            )
             df.loc[mask, "rainfall_mm"] = 0.0
-
-    return df
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -329,12 +304,12 @@ def fetch_historical_weather(
                 if not frame.empty:
                     all_frames.append(frame)
             except requests.HTTPError as exc:
-                logger.error(
+                logger.exception(
                     "HTTP error fetching weather for station '%s' [%s→%s]: %s",
                     station_id, batch_start, batch_end, exc,
                 )
             except Exception as exc:  # noqa: BLE001
-                logger.error(
+                logger.exception(
                     "Unexpected error fetching weather for station '%s' [%s→%s]: %s",
                     station_id, batch_start, batch_end, exc,
                 )
@@ -388,7 +363,7 @@ def fetch_realtime_weather(station_ids: List[str]) -> pd.DataFrame:
                     frame["obs_date"] = pd.Timestamp.today().normalize()
                 frames.append(frame)
         except Exception as exc:  # noqa: BLE001
-            logger.error(
+            logger.exception(
                 "Error fetching real-time weather for station '%s': %s", station_id, exc
             )
 

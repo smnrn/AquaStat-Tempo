@@ -7,7 +7,7 @@
  * - Exported as a singleton — import `logger` wherever you need it.
  */
 
-import path from 'path';
+import path from 'node:path';
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { config } from '../config/env';

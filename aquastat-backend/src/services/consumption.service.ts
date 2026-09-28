@@ -28,7 +28,7 @@ interface ConstellationConsumptionRow {
 }
 
 function mapRow(row: ConstellationConsumptionRow): ConsumptionRecord {
-  const vol = parseFloat(row.billed_volume_m3);
+  const vol = Number.parseFloat(row.billed_volume_m3);
   // Flag consumption > 2,000 m³ as anomaly for TCWD audits
   const isAnomaly = vol > 2000;
   return {
@@ -86,7 +86,7 @@ export async function getConsumptionRecords(
      ${where}`,
     values
   );
-  const total = parseInt(countResult.rows[0]?.count ?? '0', 10);
+  const total = Number.parseInt(countResult.rows[0]?.count ?? '0', 10);
 
   const dataResult = await query<ConstellationConsumptionRow>(
     `SELECT 

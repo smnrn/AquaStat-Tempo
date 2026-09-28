@@ -11,7 +11,7 @@
  */
 
 import 'dotenv/config'; // Must be first — populates process.env before any import reads config
-import http from 'http';
+import http from 'node:http';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 import { checkConnection, closePool } from './database/pool';

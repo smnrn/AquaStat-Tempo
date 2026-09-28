@@ -65,12 +65,16 @@ export const globalErrorHandler: ErrorRequestHandler = (
   const errorCode =
     err instanceof AppError ? err.code : 'INTERNAL_ERROR';
 
-  const message =
-    err instanceof AppError
-      ? err.message
-      : config.isProduction
-        ? 'An unexpected error occurred. Please try again later.'
-        : (err instanceof Error ? err.message : String(err));
+  let message: string;
+  if (err instanceof AppError) {
+    message = err.message;
+  } else if (config.isProduction) {
+    message = 'An unexpected error occurred. Please try again later.';
+  } else if (err instanceof Error) {
+    message = err.message;
+  } else {
+    message = String(err);
+  }
 
   // Log the error (with stack in non-production)
   logger.error('[ErrorHandler]', {

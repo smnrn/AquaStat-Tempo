@@ -96,7 +96,8 @@ def predict_sarimax(model: Any, temp: float, rain: float) -> float:
     """Generate 1-step demand forecast with SARIMAX using weather regressors."""
     exog_future = pd.DataFrame({"temp": [temp], "rain": [rain]})
     forecast_series = model.forecast(steps=1, exog=exog_future)
-    return float(max(0.0, forecast_series.iloc[0]))
+    val = forecast_series.iloc[0] if hasattr(forecast_series, 'iloc') else forecast_series[0]
+    return float(max(0.0, float(val)))
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 2. DEEP LEARNING (MULTIVARIATE LSTM)
@@ -249,21 +250,21 @@ class XGBoostDemandModel:
     def fit(self, target_series: pd.Series, exog_data: pd.DataFrame):
         """Train gradient boosting trees on lag and weather feature matrices."""
         y_vals = target_series.values
-        X_rows = []
-        Y_targets = []
+        x_rows = []
+        y_targets = []
         for i in range(7, len(y_vals)):
             window = list(y_vals[:i])
             temp = exog_data.iloc[i, 0] if exog_data.shape[1] > 0 else 30.0
             rain = exog_data.iloc[i, 1] if exog_data.shape[1] > 1 else 0.0
             feat = self._extract_features(window, temp, rain)
-            X_rows.append(feat[0])
-            Y_targets.append(y_vals[i])
+            x_rows.append(feat[0])
+            y_targets.append(y_vals[i])
 
-        if len(X_rows) > 0:
-            X_mat = np.array(X_rows)
-            y_arr = np.array(Y_targets)
-            X_scaled = self.scaler.fit_transform(X_mat)
-            self.model.fit(X_scaled, y_arr)
+        if len(x_rows) > 0:
+            x_mat = np.array(x_rows)
+            y_arr = np.array(y_targets)
+            x_scaled = self.scaler.fit_transform(x_mat)
+            self.model.fit(x_scaled, y_arr)
             self.is_fitted_ = True
         return self
 

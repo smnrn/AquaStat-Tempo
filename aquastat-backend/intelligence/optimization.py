@@ -29,6 +29,64 @@ logger = logging.getLogger("aquastat.optimization")
 # 1. LINEAR PROGRAMMING (LP) PUMP SCHEDULE OPTIMIZATION
 # ──────────────────────────────────────────────────────────────────────────────
 
+def _get_default_facilities() -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": "PS-MAIN-01",
+            "name": "TCWD Main Pumping Station (San Vicente)",
+            "max_capacity_m3_per_step": 6000.0,
+            "energy_kwh_per_m3": 0.38,
+            "max_steps_per_day": 20,
+        },
+        {
+            "id": "PS-BOOSTER-A",
+            "name": "Booster Station A — Panal Intermediate",
+            "max_capacity_m3_per_step": 4500.0,
+            "energy_kwh_per_m3": 0.44,
+            "max_steps_per_day": 16,
+        },
+        {
+            "id": "PS-BOOSTER-B",
+            "name": "Booster Station B — Buang High-Elevation",
+            "max_capacity_m3_per_step": 3200.0,
+            "energy_kwh_per_m3": 0.52,
+            "max_steps_per_day": 14,
+        },
+        {
+            "id": "PS-STANDBY-01",
+            "name": "Sto. Cristo Auxiliary Well & Pump",
+            "max_capacity_m3_per_step": 2500.0,
+            "energy_kwh_per_m3": 0.60,
+            "max_steps_per_day": 8,
+        }
+    ]
+
+
+def _compute_time_of_use_rates(time_steps: int) -> List[float]:
+    rates = []
+    for t in range(time_steps):
+        hour = t % 24
+        if hour < 6 or hour >= 22:
+            rates.append(6.20)
+        elif 18 <= hour < 22:
+            rates.append(11.80)
+        else:
+            rates.append(8.50)
+    return rates
+
+
+def _extract_lp_schedule(facility_ids: List[str], time_steps: int, volume_vars: Any) -> Tuple[Dict[str, List[float]], float]:
+    schedule: Dict[str, List[float]] = {f: [] for f in facility_ids}
+    total_volume = 0.0
+    for f in facility_ids:
+        for t in range(time_steps):
+            v = value(volume_vars[(f, t)])
+            val_clean = float(round(max(0.0, v if v is not None else 0.0), 2))
+            schedule[f].append(val_clean)
+            total_volume += val_clean
+    return schedule, total_volume
+
+
 def optimize_pump_schedule(
     forecasted_demand: List[float],
     facilities: Optional[List[Dict[str, Any]]] = None,
@@ -37,113 +95,37 @@ def optimize_pump_schedule(
 ) -> Dict[str, Any]:
     """
     Generate an optimal, cost-efficient pump schedule using Linear Programming (PuLP).
-
-    Objective Function:
-      Minimize Z = Sum_{f in Facilities} Sum_{t in TimeSteps} [ Volume_{f,t} * SpecificEnergy_f * Tariff_t ]
-
-    Subject to:
-      1. Demand Fulfillment: Sum_{f} Volume_{f,t} >= Demand_t, for all t
-      2. Rated Capacity: Volume_{f,t} <= MaxCapacity_{f,t} * IsOn_{f,t}
-      3. Operating Hours / Duty Cycle: Sum_{t} IsOn_{f,t} <= MaxStepsPerDay_f
     """
     logger.info("Initializing LP optimization for TCWD pump scheduling.")
 
-    if facilities is None:
-        facilities = [
-            {
-                "id": "PS-MAIN-01",
-                "name": "TCWD Main Pumping Station (San Vicente)",
-                "max_capacity_m3_per_step": 6000.0,
-                "energy_kwh_per_m3": 0.38,
-                "max_steps_per_day": 20,
-            },
-            {
-                "id": "PS-BOOSTER-A",
-                "name": "Booster Station A — Panal Intermediate",
-                "max_capacity_m3_per_step": 4500.0,
-                "energy_kwh_per_m3": 0.44,
-                "max_steps_per_day": 16,
-            },
-            {
-                "id": "PS-BOOSTER-B",
-                "name": "Booster Station B — Buang High-Elevation",
-                "max_capacity_m3_per_step": 3200.0,
-                "energy_kwh_per_m3": 0.52,
-                "max_steps_per_day": 14,
-            },
-            {
-                "id": "PS-STANDBY-01",
-                "name": "Sto. Cristo Auxiliary Well & Pump",
-                "max_capacity_m3_per_step": 2500.0,
-                "energy_kwh_per_m3": 0.60,
-                "max_steps_per_day": 8,
-            }
-        ]
-
+    active_facilities = facilities if facilities is not None else _get_default_facilities()
     time_steps = len(forecasted_demand)
-    facility_ids = [fac["id"] for fac in facilities]
-
-    # Time-of-use tariffs (Off-Peak 10PM-6AM: PHP 6.20, Peak 6PM-10PM: PHP 11.80, Mid-Peak: PHP 8.50)
-    if time_of_use_rates is None:
-        time_of_use_rates = [
-            6.20 if (t % 24 < 6 or t % 24 >= 22) else (11.80 if 18 <= t % 24 < 22 else 8.50)
-            for t in range(time_steps)
-        ]
+    facility_ids = [fac["id"] for fac in active_facilities]
+    active_rates = time_of_use_rates if time_of_use_rates is not None else _compute_time_of_use_rates(time_steps)
 
     prob = LpProblem("TCWD_Pump_Scheduling_Optimization", LpMinimize)
 
-    # Decision variables
-    volume_vars = LpVariable.dicts(
-        "Volume",
-        ((f, t) for f in facility_ids for t in range(time_steps)),
-        lowBound=0,
-        cat='Continuous'
-    )
-    is_on_vars = LpVariable.dicts(
-        "Is_On",
-        ((f, t) for f in facility_ids for t in range(time_steps)),
-        cat='Binary'
-    )
+    volume_vars = LpVariable.dicts("Volume", ((f, t) for f in facility_ids for t in range(time_steps)), lowBound=0, cat='Continuous')
+    is_on_vars = LpVariable.dicts("Is_On", ((f, t) for f in facility_ids for t in range(time_steps)), cat='Binary')
 
-    energy_lookup = {fac["id"]: fac["energy_kwh_per_m3"] for fac in facilities}
-    cap_lookup = {fac["id"]: fac["max_capacity_m3_per_step"] for fac in facilities}
-    max_steps_lookup = {fac["id"]: fac.get("max_steps_per_day", time_steps) for fac in facilities}
+    energy_lookup = {fac["id"]: fac["energy_kwh_per_m3"] for fac in active_facilities}
+    cap_lookup = {fac["id"]: fac["max_capacity_m3_per_step"] for fac in active_facilities}
+    max_steps_lookup = {fac["id"]: fac.get("max_steps_per_day", time_steps) for fac in active_facilities}
 
-    # Objective: Minimize electricity cost
-    prob += lpSum(
-        [
-            volume_vars[(f, t)] * energy_lookup[f] * time_of_use_rates[t]
-            for f in facility_ids for t in range(time_steps)
-        ]
-    ), "Total_Pumping_Cost_PHP"
+    prob += lpSum([volume_vars[(f, t)] * energy_lookup[f] * active_rates[t] for f in facility_ids for t in range(time_steps)]), "Total_Pumping_Cost_PHP"
 
-    # Constraint 1: Meet forecasted demand for each time step
     for t in range(time_steps):
         prob += lpSum([volume_vars[(f, t)] for f in facility_ids]) >= forecasted_demand[t], f"Demand_Fulfillment_Step_{t}"
 
-    # Constraint 2: Maximum capacity per step linked to binary on/off variable
     for f in facility_ids:
         for t in range(time_steps):
             prob += volume_vars[(f, t)] <= cap_lookup[f] * is_on_vars[(f, t)], f"Capacity_Limit_{f}_Step_{t}"
-
-    # Constraint 3: Max operating steps limit
-    for f in facility_ids:
         prob += lpSum([is_on_vars[(f, t)] for t in range(time_steps)]) <= max_steps_lookup[f], f"Max_Operating_Steps_{f}"
 
     prob.solve()
 
-    schedule: Dict[str, List[float]] = {f: [] for f in facility_ids}
-    total_volume_pumped = 0.0
-    for f in facility_ids:
-        for t in range(time_steps):
-            v = value(volume_vars[(f, t)])
-            val_clean = float(round(max(0.0, v if v is not None else 0.0), 2))
-            schedule[f].append(val_clean)
-            total_volume_pumped += val_clean
-
+    schedule, total_volume_pumped = _extract_lp_schedule(facility_ids, time_steps, volume_vars)
     optimized_cost = float(round(value(prob.objective) if value(prob.objective) is not None else 0.0, 2))
-
-    # Baseline cost benchmark (without LP time-of-use optimization)
     baseline_cost = float(round(sum(forecasted_demand) * 0.48 * energy_cost_kwh * 1.18, 2))
     cost_savings = float(round(max(0.0, baseline_cost - optimized_cost), 2))
     savings_pct = float(round((cost_savings / max(1.0, baseline_cost)) * 100.0, 2))
@@ -220,15 +202,19 @@ def compute_mcda_zone_prioritization(
 
     results = []
     for i, z in enumerate(zones_data):
+        score_val = scores[i]
+        if score_val >= 0.70:
+            rec_action = "Immediate Pipe Replacement & Sector Pressure Step-down"
+        elif score_val >= 0.40:
+            rec_action = "Active Leak Detection Sweep & DMA Flow Meter Calibration"
+        else:
+            rec_action = "Routine Preventative Maintenance & AMR Meter Verification"
+
         results.append({
             "zone": z["zone"],
-            "mcda_score": float(round(scores[i], 4)),
+            "mcda_score": float(round(score_val, 4)),
             "priority_rank": 0,
-            "recommended_action": (
-                "Immediate Pipe Replacement & Sector Pressure Step-down" if scores[i] >= 0.70 else
-                "Active Leak Detection Sweep & DMA Flow Meter Calibration" if scores[i] >= 0.40 else
-                "Routine Preventative Maintenance & AMR Meter Verification"
-            ),
+            "recommended_action": rec_action,
             "estimated_recovery_m3": round(z["deficit"] * 0.65, 0)
         })
 

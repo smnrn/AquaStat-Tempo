@@ -66,9 +66,12 @@ from tensorflow.keras.models import load_model
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("aquastat.ml_engine")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# GLOBAL MODEL REGISTRY
-# ──────────────────────────────────────────────────────────────────────────────
+MODEL_SARIMAX = "SARIMAX"
+MODEL_MULTIVARIATE_LSTM = "Multivariate LSTM"
+MODEL_META_PROPHET = "Meta Prophet"
+MODEL_XGBOOST = "XGBoost Regressor"
+
+# Global Model Registry
 
 MODELS: Dict[str, Any] = {
     "sarimax": None,
@@ -78,9 +81,7 @@ MODELS: Dict[str, Any] = {
     "xgboost": None
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# LIFECYCLE MANAGEMENT
-# ──────────────────────────────────────────────────────────────────────────────
+# Lifecycle Management
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -133,9 +134,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down AquaStat Analytics Engine...")
     MODELS.clear()
 
-# ──────────────────────────────────────────────────────────────────────────────
-# APP & MIDDLEWARE
-# ──────────────────────────────────────────────────────────────────────────────
+# App and Middleware
 
 app = FastAPI(
     title="AquaStat Decision Support Intelligence Engine",
@@ -185,13 +184,13 @@ async def predict_sarimax_api(payload: DemandPredictionRequest) -> Dict[str, Any
         val = predict_sarimax(MODELS["sarimax"], payload.temperature, payload.rainfall)
         return {
             "status": "success",
-            "model": "SARIMAX",
+            "model": MODEL_SARIMAX,
             "forecasted_demand_m3": round(val, 2),
             "confidence_band_low_m3": round(val * 0.95, 2),
             "confidence_band_high_m3": round(val * 1.05, 2)
         }
-    except Exception as e:
-        logger.error(f"SARIMAX failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("SARIMAX failed")
         raise HTTPException(status_code=500, detail="SARIMAX inference error")
 
 @app.post("/api/predict/lstm", status_code=status.HTTP_200_OK)
@@ -207,13 +206,13 @@ async def predict_lstm_api(payload: DemandPredictionRequest) -> Dict[str, Any]:
         val = predict_lstm(MODELS["lstm"], MODELS["lstm_scaler"], data_2d)
         return {
             "status": "success",
-            "model": "Multivariate LSTM",
+            "model": MODEL_MULTIVARIATE_LSTM,
             "forecasted_demand_m3": round(val, 2),
             "confidence_band_low_m3": round(val * 0.96, 2),
             "confidence_band_high_m3": round(val * 1.04, 2)
         }
-    except Exception as e:
-        logger.error(f"LSTM failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("LSTM failed")
         raise HTTPException(status_code=500, detail="LSTM inference error")
 
 @app.post("/api/predict/prophet", status_code=status.HTTP_200_OK)
@@ -224,13 +223,13 @@ async def predict_prophet_api(payload: DemandPredictionRequest) -> Dict[str, Any
         val = MODELS["prophet"].predict(current_vol, payload.temperature, payload.rainfall)
         return {
             "status": "success",
-            "model": "Meta Prophet",
+            "model": MODEL_META_PROPHET,
             "forecasted_demand_m3": round(val, 2),
             "confidence_band_low_m3": round(val * 0.94, 2),
             "confidence_band_high_m3": round(val * 1.06, 2)
         }
-    except Exception as e:
-        logger.error(f"Prophet failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("Prophet failed")
         raise HTTPException(status_code=500, detail="Prophet inference error")
 
 @app.post("/api/predict/xgboost", status_code=status.HTTP_200_OK)
@@ -240,18 +239,16 @@ async def predict_xgboost_api(payload: DemandPredictionRequest) -> Dict[str, Any
         val = MODELS["xgboost"].predict(payload.historical_consumption, payload.temperature, payload.rainfall)
         return {
             "status": "success",
-            "model": "XGBoost Regressor",
+            "model": MODEL_XGBOOST,
             "forecasted_demand_m3": round(val, 2),
             "confidence_band_low_m3": round(val * 0.95, 2),
             "confidence_band_high_m3": round(val * 1.05, 2)
         }
-    except Exception as e:
-        logger.error(f"XGBoost failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("XGBoost failed")
         raise HTTPException(status_code=500, detail="XGBoost inference error")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# PRESCRIPTIVE ENDPOINTS (LP, MCDA, FP-GROWTH)
-# ──────────────────────────────────────────────────────────────────────────────
+# Prescriptive Endpoints (LP, MCDA, FP-Growth)
 
 @app.post("/api/prescribe/pump-schedule", status_code=status.HTTP_200_OK)
 async def optimize_schedule_api(payload: OptimizationScheduleRequest) -> Dict[str, Any]:
@@ -263,8 +260,8 @@ async def optimize_schedule_api(payload: OptimizationScheduleRequest) -> Dict[st
             energy_cost_kwh=payload.energy_cost_kwh or 8.50
         )
         return {"status": "success", "data": result}
-    except Exception as e:
-        logger.error(f"LP optimization failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("LP optimization failed")
         raise HTTPException(status_code=500, detail="Linear Programming solver error")
 
 @app.post("/api/prescribe/mcda-zone-ranking", status_code=status.HTTP_200_OK)
@@ -273,8 +270,8 @@ async def mcda_ranking_api(payload: MCDARequest) -> Dict[str, Any]:
     try:
         rankings = compute_mcda_zone_prioritization(payload.zones_data, payload.weights)
         return {"status": "success", "rankings": rankings}
-    except Exception as e:
-        logger.error(f"MCDA ranking failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("MCDA ranking failed")
         raise HTTPException(status_code=500, detail="MCDA computation error")
 
 @app.get("/api/prescribe/fp-growth-patterns", status_code=status.HTTP_200_OK)
@@ -283,15 +280,27 @@ async def fp_growth_patterns_api(min_support: float = 0.20, min_confidence: floa
     try:
         patterns = discover_fp_growth_patterns(min_support, min_confidence)
         return {"status": "success", "patterns": patterns}
-    except Exception as e:
-        logger.error(f"FP-Growth failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("FP-Growth failed")
         raise HTTPException(status_code=500, detail="FP-Growth mining error")
+
+@app.get("/", status_code=status.HTTP_200_OK)
+async def root_index():
+    return {
+        "status": "healthy",
+        "service": "AquaStat Three-Tier Analytics Engine",
+        "docs_url": "/docs",
+        "redoc_url": "/redoc",
+        "health_url": "/health",
+        "models_active": [MODEL_SARIMAX, MODEL_MULTIVARIATE_LSTM, MODEL_META_PROPHET, MODEL_XGBOOST],
+        "prescriptive_modules": ["Linear Programming (LP)", "MCDA (TOPSIS)", "FP-Growth Mining"]
+    }
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
     return {
         "status": "healthy",
         "service": "AquaStat Three-Tier Analytics Engine",
-        "models_active": ["SARIMAX", "Multivariate LSTM", "Meta Prophet", "XGBoost Regressor"],
+        "models_active": [MODEL_SARIMAX, MODEL_MULTIVARIATE_LSTM, MODEL_META_PROPHET, MODEL_XGBOOST],
         "prescriptive_modules": ["Linear Programming (LP)", "MCDA (TOPSIS)", "FP-Growth Mining"]
     }

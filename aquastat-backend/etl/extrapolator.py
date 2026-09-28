@@ -188,6 +188,65 @@ def _disaggregate_month(
 # PUBLIC API
 # ──────────────────────────────────────────────────────────────────────────────
 
+def _disaggregate_rate_column(col_df: pd.DataFrame, col: str) -> pd.DataFrame:
+    rows = []
+    for _, row in col_df.iterrows():
+        days_in_month = pd.Period(row["_month_start"], freq="M").days_in_month
+        for d in pd.date_range(row["_month_start"], periods=days_in_month, freq="D"):
+            rows.append({"date": d, col: row[col]})
+    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=["date", col])
+
+
+def _disaggregate_volume_column(col_df: pd.DataFrame, col: str) -> pd.DataFrame:
+    seasonal_idx = _build_seasonal_index(col_df, "_month_start", col)
+    rows = []
+    for _, row in col_df.iterrows():
+        daily_frame = _disaggregate_month(
+            row["_month_start"], row[col], seasonal_idx
+        )
+        daily_frame = daily_frame.rename(columns={"daily_value": col})
+        rows.append(daily_frame)
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["date", col])
+
+
+def _disaggregate_facility(
+    fdf: pd.DataFrame,
+    facility: Any,
+    facility_col: str,
+    value_cols: list,
+    rate_cols: set
+) -> Optional[pd.DataFrame]:
+    facility_daily_frames = []
+    for col in value_cols:
+        if col not in fdf.columns:
+            logger.warning("Column '%s' not found in production data — skipping.", col)
+            continue
+
+        col_df = fdf[["_month_start", col]].dropna(subset=[col])
+        if col in rate_cols:
+            col_daily = _disaggregate_rate_column(col_df, col)
+        else:
+            col_daily = _disaggregate_volume_column(col_df, col)
+        facility_daily_frames.append(col_daily.set_index("date"))
+
+    if not facility_daily_frames:
+        return None
+
+    facility_daily = facility_daily_frames[0]
+    for frame in facility_daily_frames[1:]:
+        facility_daily = facility_daily.join(frame, how="outer")
+
+    facility_daily.reset_index(inplace=True)
+    facility_daily[facility_col] = facility
+
+    for meta_col in ("facility_name", "status"):
+        if meta_col in fdf.columns:
+            last_val = fdf.sort_values("_month_start")[meta_col].dropna()
+            facility_daily[meta_col] = last_val.iloc[-1] if len(last_val) > 0 else np.nan
+
+    return facility_daily
+
+
 def extrapolate_production_to_daily(
     monthly_df: pd.DataFrame,
     date_col: str    = "recorded_at",
@@ -196,37 +255,16 @@ def extrapolate_production_to_daily(
 ) -> pd.DataFrame:
     """
     Disaggregate monthly production records to a continuous daily time-series.
-
-    Each numeric column in value_cols is disaggregated independently using
-    its own seasonal index derived from the full historical record.
-
-    Disaggregation is performed per-facility so that each facility's distinct
-    seasonal pattern is preserved.
-
-    Parameters
-    ----------
-    monthly_df   : pd.DataFrame  — clean monthly production data (from Stage 1)
-    date_col     : str           — column identifying the recording month/date
-    value_cols   : list[str]     — numeric columns to disaggregate
-                                   (defaults to the four main production KPIs)
-    facility_col : str           — column identifying the facility
-
-    Returns
-    -------
-    pd.DataFrame  — daily production DataFrame with one row per (facility, date).
     """
     if value_cols is None:
         value_cols = [
             "volume_produced_m3",
             "nrw_volume_m3",
             "energy_consumption_kwh",
-            "nrw_percentage",   # treated as a rate → averaged, not summed
+            "nrw_percentage",
         ]
 
-    # Columns that represent rates/percentages — these should be averaged
-    # across days rather than proportionally distributed from a total.
     rate_cols = {"nrw_percentage", "efficiency"}
-
     df = monthly_df.copy()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
     df["_month_start"] = df[date_col].dt.to_period("M").dt.to_timestamp()
@@ -235,70 +273,14 @@ def extrapolate_production_to_daily(
     all_daily_frames = []
 
     for facility in facilities:
-        # Filter to this facility's history
-        if facility is not None:
-            fdf = df[df[facility_col] == facility].copy()
-        else:
-            fdf = df.copy()
-
+        fdf = df[df[facility_col] == facility].copy() if facility is not None else df.copy()
         logger.info(
             "Extrapolating production to daily for facility '%s' (%d monthly records).",
             facility, len(fdf),
         )
-
-        facility_daily_frames = []
-
-        for col in value_cols:
-            if col not in fdf.columns:
-                logger.warning("Column '%s' not found in production data — skipping.", col)
-                continue
-
-            col_df = fdf[["_month_start", col]].dropna(subset=[col])
-
-            if col in rate_cols:
-                # Rates: replicate the monthly value to every day in the month
-                # (daily rate = monthly rate, since it's already normalised)
-                rows = []
-                for _, row in col_df.iterrows():
-                    days_in_month = pd.Period(row["_month_start"], freq="M").days_in_month
-                    for d in pd.date_range(row["_month_start"], periods=days_in_month, freq="D"):
-                        rows.append({"date": d, col: row[col]})
-                col_daily = pd.DataFrame(rows)
-            else:
-                # Volume / energy: build seasonal index from this column's history
-                seasonal_idx = _build_seasonal_index(col_df, "_month_start", col)
-
-                # Disaggregate each monthly total to daily
-                rows = []
-                for _, row in col_df.iterrows():
-                    daily_frame = _disaggregate_month(
-                        row["_month_start"], row[col], seasonal_idx
-                    )
-                    daily_frame = daily_frame.rename(columns={"daily_value": col})
-                    rows.append(daily_frame)
-
-                col_daily = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["date", col])
-
-            facility_daily_frames.append(col_daily.set_index("date"))
-
-        if not facility_daily_frames:
-            continue
-
-        # Merge all column-specific daily frames on date
-        facility_daily = facility_daily_frames[0]
-        for frame in facility_daily_frames[1:]:
-            facility_daily = facility_daily.join(frame, how="outer")
-
-        facility_daily.reset_index(inplace=True)
-        facility_daily[facility_col] = facility
-
-        # Carry forward facility metadata (name, status) from the last known record
-        for meta_col in ("facility_name", "status"):
-            if meta_col in fdf.columns:
-                last_val = fdf.sort_values("_month_start")[meta_col].dropna()
-                facility_daily[meta_col] = last_val.iloc[-1] if len(last_val) > 0 else np.nan
-
-        all_daily_frames.append(facility_daily)
+        facility_daily = _disaggregate_facility(fdf, facility, facility_col, value_cols, rate_cols)
+        if facility_daily is not None:
+            all_daily_frames.append(facility_daily)
 
     if not all_daily_frames:
         logger.error("No daily production data could be generated.")
@@ -315,6 +297,36 @@ def extrapolate_production_to_daily(
     return result
 
 
+def _disaggregate_billing_group(
+    gdf: pd.DataFrame,
+    group: Any,
+    group_col: Optional[str],
+    value_cols: list
+) -> Optional[pd.DataFrame]:
+    group_daily_frames = []
+    for col in value_cols:
+        if col not in gdf.columns:
+            logger.warning("Column '%s' not found in billing data — skipping.", col)
+            continue
+
+        col_df = gdf[["_month_start", col]].dropna(subset=[col])
+        col_daily = _disaggregate_volume_column(col_df, col)
+        group_daily_frames.append(col_daily.set_index("date"))
+
+    if not group_daily_frames:
+        return None
+
+    group_daily = group_daily_frames[0]
+    for frame in group_daily_frames[1:]:
+        group_daily = group_daily.join(frame, how="outer")
+
+    group_daily.reset_index(inplace=True)
+    if group_col:
+        group_daily[group_col] = group
+
+    return group_daily
+
+
 def extrapolate_billing_to_daily(
     monthly_df: pd.DataFrame,
     period_start_col: str  = "billing_period_start",
@@ -324,25 +336,6 @@ def extrapolate_billing_to_daily(
 ) -> pd.DataFrame:
     """
     Disaggregate monthly billing totals to a continuous daily time-series.
-
-    Billing data is characterised by a period [start, end] rather than a
-    single recorded_at timestamp.  This function:
-      1. Derives the billing month from the period_start date.
-      2. Applies the same seasonal disaggregation as production.
-      3. Optionally groups by a column (e.g., zone_id, customer_segment).
-
-    Parameters
-    ----------
-    monthly_df       : pd.DataFrame  — clean monthly billing data (from Stage 1)
-    period_start_col : str           — billing period start date column
-    period_end_col   : str           — billing period end date column
-    value_cols       : list[str]     — numeric columns to disaggregate
-    group_col        : str | None    — optional grouping column
-                                       (e.g., 'zone_id', 'customer_id')
-
-    Returns
-    -------
-    pd.DataFrame  — daily billing DataFrame.
     """
     if value_cols is None:
         value_cols = ["volume_billed_m3", "amount_due"]
@@ -360,53 +353,14 @@ def extrapolate_billing_to_daily(
     all_daily_frames = []
 
     for group in groups:
-        if group is not None:
-            gdf = df[df[group_col] == group].copy()
-        else:
-            gdf = df.copy()
-
+        gdf = df[df[group_col] == group].copy() if group is not None else df.copy()
         logger.info(
             "Extrapolating billing to daily for group '%s' (%d monthly records).",
             group, len(gdf),
         )
-
-        group_daily_frames = []
-
-        for col in value_cols:
-            if col not in gdf.columns:
-                logger.warning("Column '%s' not found in billing data — skipping.", col)
-                continue
-
-            col_df = gdf[["_month_start", col]].dropna(subset=[col])
-
-            # Build seasonal index from this column's history
-            seasonal_idx = _build_seasonal_index(col_df, "_month_start", col)
-
-            # Disaggregate monthly → daily
-            rows = []
-            for _, row in col_df.iterrows():
-                daily_frame = _disaggregate_month(
-                    row["_month_start"], row[col], seasonal_idx
-                )
-                daily_frame = daily_frame.rename(columns={"daily_value": col})
-                rows.append(daily_frame)
-
-            col_daily = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["date", col])
-            group_daily_frames.append(col_daily.set_index("date"))
-
-        if not group_daily_frames:
-            continue
-
-        # Merge all column-specific frames on date
-        group_daily = group_daily_frames[0]
-        for frame in group_daily_frames[1:]:
-            group_daily = group_daily.join(frame, how="outer")
-
-        group_daily.reset_index(inplace=True)
-        if group_col:
-            group_daily[group_col] = group
-
-        all_daily_frames.append(group_daily)
+        group_daily = _disaggregate_billing_group(gdf, group, group_col, value_cols)
+        if group_daily is not None:
+            all_daily_frames.append(group_daily)
 
     if not all_daily_frames:
         logger.error("No daily billing data could be generated.")
@@ -416,7 +370,5 @@ def extrapolate_billing_to_daily(
     result.sort_values("date", inplace=True)
     result.reset_index(drop=True, inplace=True)
 
-    logger.info(
-        "Billing extrapolation complete: %d daily rows.", len(result)
-    )
+    logger.info("Billing extrapolation complete: %d daily rows.", len(result))
     return result

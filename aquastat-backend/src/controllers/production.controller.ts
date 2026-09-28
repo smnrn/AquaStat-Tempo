@@ -126,8 +126,8 @@ export async function getPythonModelInput(
   next: NextFunction
 ): Promise<void> {
   try {
-    const lookbackDays = parseInt(
-      String(req.query['lookbackDays'] ?? '30'),
+    const lookbackDays = Number.parseInt(
+      typeof req.query['lookbackDays'] === 'string' ? req.query['lookbackDays'] : '30',
       10
     );
     const payload = await ProductionService.getPythonModelInput(

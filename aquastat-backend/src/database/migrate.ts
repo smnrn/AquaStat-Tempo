@@ -12,7 +12,7 @@
  */
 
 import { config as loadDotenv } from 'dotenv';
-import path from 'path';
+import path from 'node:path';
 
 // Load env BEFORE importing pool (pool reads config on module load)
 loadDotenv({ path: path.resolve(__dirname, '../../.env') });

@@ -21,6 +21,7 @@ import logging
 import os
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -46,13 +47,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
 
 # Load .env so this module can be invoked standalone (e.g., from a cron job)
-load_dotenv()
+_backend_env = Path(__file__).resolve().parent.parent / ".env"
+if _backend_env.exists():
+    load_dotenv(dotenv_path=_backend_env, encoding="utf-8")
+else:
+    load_dotenv(encoding="utf-8")
 
 logger = logging.getLogger("aquastat.etl.loader")
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 # CONFIGURATION
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 
 _DB_HOST     = os.getenv("DB_HOST",     "localhost")
 _DB_PORT     = os.getenv("DB_PORT",     "5432")
@@ -163,9 +168,9 @@ billing_table = Table(
 )
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 # HELPERS
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 
 def _replace_nan_with_none(records: list) -> list:
     """
@@ -369,7 +374,7 @@ def _load_dataframe(
     try:
         records = prepare_fn(df)
     except ValueError as exc:
-        logger.error("[%s] Record preparation failed: %s", label, exc)
+        logger.exception("[%s] Record preparation failed: %s", label, exc)
         raise
 
     total_rows   = len(records)
@@ -390,7 +395,7 @@ def _load_dataframe(
             )
         except SQLAlchemyError as exc:
             failed_chunks += 1
-            logger.error(
+            logger.exception(
                 "[%s] Chunk %d failed: %s — skipping this chunk.",
                 label, chunk_num, exc,
             )
@@ -534,7 +539,7 @@ def verify_load(engine: Optional[Engine] = None) -> dict:
                     table_name, row_count, ts_col, latest,
                 )
             except SQLAlchemyError as exc:
-                logger.error("Verification failed for table '%s': %s", table_name, exc)
+                logger.exception("Verification failed for table '%s': %s", table_name, exc)
                 summary[table_name] = {"error": str(exc)}
 
     return summary

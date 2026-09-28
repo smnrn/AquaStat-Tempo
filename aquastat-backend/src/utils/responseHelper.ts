@@ -95,10 +95,12 @@ export function parsePagination(
   rawPage: unknown,
   rawLimit: unknown
 ): { page: number; limit: number; offset: number } {
-  const page = Math.max(1, parseInt(String(rawPage ?? '1'), 10) || 1);
+  const pageStr = typeof rawPage === 'string' ? rawPage : '1';
+  const limitStr = typeof rawLimit === 'string' ? rawLimit : '20';
+  const page = Math.max(1, Number.parseInt(pageStr, 10) || 1);
   const limit = Math.min(
     100,
-    Math.max(1, parseInt(String(rawLimit ?? '20'), 10) || 20)
+    Math.max(1, Number.parseInt(limitStr, 10) || 20)
   );
   const offset = (page - 1) * limit;
   return { page, limit, offset };

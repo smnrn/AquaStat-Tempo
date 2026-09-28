@@ -8,7 +8,7 @@
  */
 
 import { config as loadDotenv } from 'dotenv';
-import path from 'path';
+import path from 'node:path';
 
 // Load .env from project root before anything else references process.env
 loadDotenv({ path: path.resolve(__dirname, '../../.env') });
@@ -34,8 +34,8 @@ function required(key: string, fallback?: string): string {
 function optionalInt(key: string, fallback: number): number {
   const raw = process.env[key];
   if (!raw) return fallback;
-  const parsed = parseInt(raw, 10);
-  if (isNaN(parsed)) throw new Error(`[Config] "${key}" must be an integer.`);
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed)) throw new Error(`[Config] "${key}" must be an integer.`);
   return parsed;
 }
 

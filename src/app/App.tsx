@@ -219,11 +219,12 @@ function useCountUp(target: string, duration = 1100): string {
   const [val, setVal] = useState("0")
   useEffect(() => {
     if (!target) { setVal("0"); return }
-    const parts = target.replace(/,/g, "").match(/^([₱]?)([\d]+\.?[\d]*)([kMm]?)(.*)$/)
+    const clean = target.replaceAll(",", "")
+    const parts = /^(₱?)(\d+(?:\.\d*)?)([kMm]?)(.*)$/.exec(clean)
     if (!parts) { setVal(target); return }
     const [, prefix, num, suffix, rest] = parts
-    const end = parseFloat(num)
-    if (isNaN(end)) { setVal(target); return }
+    const end = Number.parseFloat(num)
+    if (Number.isNaN(end)) { setVal(target); return }
     const isFloat = target.includes(".")
     const decimals = isFloat ? (target.split(".")[1]?.replace(/\D/g, "").length ?? 1) : 0
     const t0 = performance.now()
@@ -232,9 +233,10 @@ function useCountUp(target: string, duration = 1100): string {
       const p = Math.min((ts - t0) / duration, 1)
       const eased = 1 - Math.pow(1 - p, 3)
       const cur = end * eased
+      const suffixPart = suffix ? suffix + rest : rest
       const formatted = isFloat
         ? `${prefix}${cur.toFixed(decimals)}${suffix}${rest}`
-        : `${prefix}${Math.round(cur).toLocaleString()}${suffix ? suffix + rest : rest}`
+        : `${prefix}${Math.round(cur).toLocaleString()}${suffixPart}`
       setVal(formatted)
       if (p < 1) raf = requestAnimationFrame(step)
       else setVal(target)
@@ -246,20 +248,24 @@ function useCountUp(target: string, duration = 1100): string {
 }
 
 // ── UTILITY COMPONENTS ─────────────────────────────────────────────────────
-function StatusBadge({ status }: { status: ZoneStatus }) {
+function StatusBadge({ status }: Readonly<{ status: ZoneStatus }>) {
   const map = {
     critical: "bg-red-50 text-red-600 border-red-200",
     warning:  "bg-amber-50 text-amber-600 border-amber-200",
     normal:   "bg-emerald-50 text-emerald-600 border-emerald-200",
   }
+  let label = "NORMAL"
+  if (status === "critical") label = "CRITICAL"
+  else if (status === "warning") label = "WARNING"
+
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border ${map[status]}`}>
-      {status === "critical" ? "CRITICAL" : status === "warning" ? "WARNING" : "NORMAL"}
+      {label}
     </span>
   )
 }
 
-function SeverityBadge({ severity }: { severity: "critical" | "warning" | "info" }) {
+function SeverityBadge({ severity }: Readonly<{ severity: "critical" | "warning" | "info" }>) {
   const map = {
     critical: { bg: "bg-red-50",    text: "text-red-600",    border: "border-red-200",    bar: "bg-[#D32F2F]" },
     warning:  { bg: "bg-amber-50",  text: "text-amber-600",  border: "border-amber-200",  bar: "bg-[#F59E0B]" },
@@ -268,10 +274,10 @@ function SeverityBadge({ severity }: { severity: "critical" | "warning" | "info"
   return <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${map[severity].bg} ${map[severity].text}`}>{severity}</span>
 }
 
-function KPICard({ title, value, unit, change, changeLabel, color = "#0038A8", sparkData }: {
+function KPICard({ title, value, unit, change, changeLabel, color = "#0038A8", sparkData }: Readonly<{
   title: string; value: string; unit?: string; change?: number; changeLabel?: string
   color?: string; sparkData?: number[]
-}) {
+}>) {
   const positive = (change ?? 0) >= 0
   const animated = useCountUp(value)
   const lastIdx = (sparkData?.length ?? 0) - 1
@@ -1387,7 +1393,7 @@ function WeatherScreen() {
       <div className="grid grid-cols-2 gap-4">
         {/* Scatter: Temp vs Demand */}
         <ChartCard title="Temperature vs. Daily Water Demand (2017–2025)">
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={240}>
             <ScatterChart syncId="weather-sync" margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
               <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#F1F5F9" />
               <XAxis key="xaxis" dataKey="temp" name="Temperature" unit="°C"
@@ -1406,7 +1412,27 @@ function WeatherScreen() {
                   </div>
                 )
               }} />
-              <Scatter key="scatter-temp" name="Temp vs Demand" data={TEMP_DEMAND} fill="#0038A8" opacity={0.7} />
+              <Legend
+                key="legend"
+                verticalAlign="bottom"
+                content={() => (
+                  <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100 mt-1">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0038A8] inline-block shadow-xs" />
+                      <span className="font-medium text-slate-700">Historical Demand</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444] inline-block shadow-xs" />
+                      <span className="font-medium text-slate-700">Live Reading {current ? `(${current.temperature}°C)` : ''}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-4 border-b-2 border-dashed border-[#D32F2F] inline-block" />
+                      <span className="font-medium text-slate-700">Regression Line <span className="text-slate-400 font-normal">(r² = 0.72)</span></span>
+                    </span>
+                  </div>
+                )}
+              />
+              <Scatter key="scatter-temp" name="Historical Demand" data={TEMP_DEMAND} fill="#0038A8" opacity={0.7} />
               {/* Live current point */}
               {current && (
                 <Scatter key="scatter-live" name="Current Live" data={[{ temp: current.temperature, demand: adjDemand }]} fill="#EF4444" r={6} />
@@ -1416,12 +1442,12 @@ function WeatherScreen() {
                 label={{ value: 'r² = 0.72', fill: '#D32F2F', fontSize: 9, position: 'insideTopRight' }} />
             </ScatterChart>
           </ResponsiveContainer>
-          <p className="text-[10px] text-slate-400 mt-1">● Live reading plotted in red · Regression: D = 192T − 1,576 (R² = 0.72)</p>
+          <p className="text-[10px] text-slate-400 mt-1">Regression: D = 192T − 1,576 (R² = 0.72) · Telemetry correlation window: 2017–2025</p>
         </ChartCard>
 
         {/* Dual-axis: Rainfall vs NRW */}
         <ChartCard title="Rainfall vs. NRW Seasonal Pattern">
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={240}>
             <ComposedChart syncId="weather-sync" data={[
               { month: 'Oct', rainfall: 180, nrw: 27.4 }, { month: 'Nov', rainfall: 220, nrw: 28.1 },
               { month: 'Dec', rainfall: 160, nrw: 27.8 }, { month: 'Jan', rainfall: 40,  nrw: 26.4 },

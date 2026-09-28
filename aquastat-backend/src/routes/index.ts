@@ -19,6 +19,30 @@ import weatherRouter from './weather.routes';
 
 const router = Router();
 
+// ─── Root API index ──────────────────────────────────────────────────────────
+
+/**
+ * GET /api/v1
+ * Root API metadata and endpoints directory.
+ */
+router.get('/', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    service: 'AquaStat Water Supply Forecasting & Decision Support API',
+    version: config.apiVersion,
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: `${config.apiBasePath}/${config.apiVersion}/health`,
+      billing: `${config.apiBasePath}/${config.apiVersion}/billing`,
+      consumption: `${config.apiBasePath}/${config.apiVersion}/consumption`,
+      production: `${config.apiBasePath}/${config.apiVersion}/production`,
+      analytics: `${config.apiBasePath}/${config.apiVersion}/analytics`,
+      ml: `${config.apiBasePath}/${config.apiVersion}/ml`,
+      weather: `${config.apiBasePath}/${config.apiVersion}/weather`,
+    },
+  });
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 
 /**
