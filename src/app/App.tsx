@@ -10,7 +10,8 @@ import {
   Shield, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle,
   Filter, Calendar, FileText, Database,
   Sun, Cloud, CloudRain, CloudLightning, MapPin, Activity,
-  CheckCheck, Cpu, type LucideIcon
+  CheckCheck, Cpu, X, Scale, ArrowRight, DollarSign, Users, Sparkles, HelpCircle,
+  type LucideIcon
 } from "lucide-react"
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -26,26 +27,26 @@ type ZoneStatus = "normal" | "warning" | "critical"
 
 // ── DATA ───────────────────────────────────────────────────────────────────
 const ZONES = [
-  { id: 1,  name: "Tabaco Center",     consumption: 18240, nrw: 24.2, accounts: 892,  population: 4120, status: "critical" as ZoneStatus, trend: [14200,15400,16100,16900,17600,18240] },
-  { id: 2,  name: "Panal / Poblacion", consumption: 22150, nrw: 27.0, accounts: 1124, population: 5280, status: "critical" as ZoneStatus, trend: [18200,19400,20100,20900,21600,22150] },
-  { id: 3,  name: "Magallanes",        consumption: 14320, nrw: 18.4, accounts: 698,  population: 3140, status: "warning"  as ZoneStatus, trend: [13100,13400,13800,14000,14200,14320] },
-  { id: 4,  name: "Rawis",             consumption: 11840, nrw: 14.8, accounts: 582,  population: 2680, status: "normal"   as ZoneStatus, trend: [11200,11400,11500,11600,11720,11840] },
-  { id: 5,  name: "Quinartisan",       consumption: 9420,  nrw: 16.2, accounts: 461,  population: 2100, status: "warning"  as ZoneStatus, trend: [8800,9000,9100,9200,9320,9420]    },
-  { id: 6,  name: "Buang",             consumption: 8760,  nrw: 12.4, accounts: 428,  population: 1980, status: "normal"   as ZoneStatus, trend: [8400,8500,8580,8640,8700,8760]    },
-  { id: 7,  name: "Sagrada",           consumption: 16480, nrw: 19.8, accounts: 802,  population: 3720, status: "warning"  as ZoneStatus, trend: [14800,15200,15600,15900,16200,16480] },
-  { id: 8,  name: "Tayhi",             consumption: 7840,  nrw: 11.2, accounts: 384,  population: 1760, status: "normal"   as ZoneStatus, trend: [7500,7580,7640,7700,7770,7840]    },
-  { id: 9,  name: "Tula-tula Grande",  consumption: 10240, nrw: 17.6, accounts: 502,  population: 2320, status: "warning"  as ZoneStatus, trend: [9600,9800,9940,10040,10140,10240]  },
-  { id: 10, name: "Tula-tula Pequeño", consumption: 6480,  nrw: 10.8, accounts: 318,  population: 1440, status: "normal"   as ZoneStatus, trend: [6200,6280,6340,6400,6440,6480]    },
-  { id: 11, name: "San Lorenzo",       consumption: 8920,  nrw: 15.4, accounts: 437,  population: 2020, status: "normal"   as ZoneStatus, trend: [8500,8620,8720,8800,8860,8920]    },
-  { id: 12, name: "Hacienda",          consumption: 5840,  nrw: 9.8,  accounts: 286,  population: 1320, status: "normal"   as ZoneStatus, trend: [5600,5680,5720,5770,5810,5840]    },
-  { id: 13, name: "Banao",             consumption: 9180,  nrw: 16.8, accounts: 449,  population: 2080, status: "warning"  as ZoneStatus, trend: [8700,8820,8940,9020,9100,9180]    },
-  { id: 14, name: "Salvacion",         consumption: 7420,  nrw: 13.2, accounts: 363,  population: 1680, status: "normal"   as ZoneStatus, trend: [7100,7180,7260,7320,7380,7420]    },
-  { id: 15, name: "Sto. Cristo",       consumption: 14840, nrw: 22.3, accounts: 726,  population: 3360, status: "critical" as ZoneStatus, trend: [12800,13200,13600,14000,14400,14840] },
-  { id: 16, name: "Gogon",             consumption: 8640,  nrw: 14.6, accounts: 423,  population: 1960, status: "normal"   as ZoneStatus, trend: [8200,8320,8420,8500,8580,8640]    },
-  { id: 17, name: "Arimbay",           consumption: 10480, nrw: 18.9, accounts: 513,  population: 2380, status: "warning"  as ZoneStatus, trend: [9800,10000,10140,10260,10380,10480] },
-  { id: 18, name: "Sulong",            consumption: 6820,  nrw: 11.6, accounts: 334,  population: 1540, status: "normal"   as ZoneStatus, trend: [6500,6580,6640,6700,6760,6820]    },
-  { id: 19, name: "Pigcale",           consumption: 9640,  nrw: 17.2, accounts: 472,  population: 2180, status: "warning"  as ZoneStatus, trend: [9100,9240,9360,9460,9560,9640]    },
-  { id: 20, name: "Fatima",            consumption: 11240, nrw: 20.4, accounts: 550,  population: 2540, status: "critical" as ZoneStatus, trend: [10200,10480,10720,10920,11080,11240] },
+  { id: 1,  name: "Zone 1",  consumption: 18240, nrw: 24.2, accounts: 892,  population: 4120, status: "critical" as ZoneStatus, trend: [14200,15400,16100,16900,17600,18240] },
+  { id: 2,  name: "Zone 2",  consumption: 22150, nrw: 27.0, accounts: 1124, population: 5280, status: "critical" as ZoneStatus, trend: [18200,19400,20100,20900,21600,22150] },
+  { id: 3,  name: "Zone 3",  consumption: 14320, nrw: 18.4, accounts: 698,  population: 3140, status: "warning"  as ZoneStatus, trend: [13100,13400,13800,14000,14200,14320] },
+  { id: 4,  name: "Zone 4",  consumption: 11840, nrw: 14.8, accounts: 582,  population: 2680, status: "normal"   as ZoneStatus, trend: [11200,11400,11500,11600,11720,11840] },
+  { id: 5,  name: "Zone 5",  consumption: 9420,  nrw: 16.2, accounts: 461,  population: 2100, status: "warning"  as ZoneStatus, trend: [8800,9000,9100,9200,9320,9420]    },
+  { id: 6,  name: "Zone 6",  consumption: 8760,  nrw: 12.4, accounts: 428,  population: 1980, status: "normal"   as ZoneStatus, trend: [8400,8500,8580,8640,8700,8760]    },
+  { id: 7,  name: "Zone 7",  consumption: 16480, nrw: 19.8, accounts: 802,  population: 3720, status: "warning"  as ZoneStatus, trend: [14800,15200,15600,15900,16200,16480] },
+  { id: 8,  name: "Zone 8",  consumption: 7840,  nrw: 11.2, accounts: 384,  population: 1760, status: "normal"   as ZoneStatus, trend: [7500,7580,7640,7700,7770,7840]    },
+  { id: 9,  name: "Zone 9",  consumption: 10240, nrw: 17.6, accounts: 502,  population: 2320, status: "warning"  as ZoneStatus, trend: [9600,9800,9940,10040,10140,10240]  },
+  { id: 10, name: "Zone 10", consumption: 6480,  nrw: 10.8, accounts: 318,  population: 1440, status: "normal"   as ZoneStatus, trend: [6200,6280,6340,6400,6440,6480]    },
+  { id: 11, name: "Zone 11", consumption: 8920,  nrw: 15.4, accounts: 437,  population: 2020, status: "normal"   as ZoneStatus, trend: [8500,8620,8720,8800,8860,8920]    },
+  { id: 12, name: "Zone 12", consumption: 5840,  nrw: 9.8,  accounts: 286,  population: 1320, status: "normal"   as ZoneStatus, trend: [5600,5680,5720,5770,5810,5840]    },
+  { id: 13, name: "Zone 13", consumption: 9180,  nrw: 16.8, accounts: 449,  population: 2080, status: "warning"  as ZoneStatus, trend: [8700,8820,8940,9020,9100,9180]    },
+  { id: 14, name: "Zone 14", consumption: 7420,  nrw: 13.2, accounts: 363,  population: 1680, status: "normal"   as ZoneStatus, trend: [7100,7180,7260,7320,7380,7420]    },
+  { id: 15, name: "Zone 15", consumption: 14840, nrw: 22.3, accounts: 726,  population: 3360, status: "critical" as ZoneStatus, trend: [12800,13200,13600,14000,14400,14840] },
+  { id: 16, name: "Zone 16", consumption: 8640,  nrw: 14.6, accounts: 423,  population: 1960, status: "normal"   as ZoneStatus, trend: [8200,8320,8420,8500,8580,8640]    },
+  { id: 17, name: "Zone 17", consumption: 10480, nrw: 18.9, accounts: 513,  population: 2380, status: "warning"  as ZoneStatus, trend: [9800,10000,10140,10260,10380,10480] },
+  { id: 18, name: "Zone 18", consumption: 6820,  nrw: 11.6, accounts: 334,  population: 1540, status: "normal"   as ZoneStatus, trend: [6500,6580,6640,6700,6760,6820]    },
+  { id: 19, name: "Zone 19", consumption: 9640,  nrw: 17.2, accounts: 472,  population: 2180, status: "warning"  as ZoneStatus, trend: [9100,9240,9360,9460,9560,9640]    },
+  { id: 20, name: "Zone 20", consumption: 11240, nrw: 20.4, accounts: 550,  population: 2540, status: "critical" as ZoneStatus, trend: [10200,10480,10720,10920,11080,11240] },
 ]
 
 const TOP10_ZONES = [...ZONES].sort((a, b) => b.consumption - a.consumption).slice(0, 10)
@@ -103,10 +104,10 @@ const SUPPLY_DEMAND = [
 ]
 
 const CUSTOMER_CLASS = [
-  { name: "Residential",     value: 139186, revenue: 3482000, accounts: 8240, color: "#0038A8" },
-  { name: "Commercial",      value: 9849,   revenue: 621000,  accounts: 680,  color: "#0284C7" },
-  { name: "Government",      value: 18324,  revenue: 784000,  accounts: 220,  color: "#10B981" },
-  { name: "Semi-Commercial", value: 4722,   revenue: 298000,  accounts: 860,  color: "#F59E0B" },
+  { name: "Residential",     value: 112840, revenue: 3482000, accounts: 8240, color: "#0038A8" },
+  { name: "Commercial",      value: 10680,  revenue: 621000,  accounts: 680,  color: "#0284C7" },
+  { name: "Government",      value: 11200,  revenue: 784000,  accounts: 220,  color: "#10B981" },
+  { name: "Semi-Commercial", value: 4779,   revenue: 298000,  accounts: 860,  color: "#F59E0B" },
 ]
 
 const ALERTS_DATA = [
@@ -556,8 +557,681 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   )
 }
 
+// ── CUSTOMER CLASS DRILL DOWN MODAL ───────────────────────────────────────
+function CustomerClassDrilldownModal({
+  isOpen,
+  onClose,
+  initialTab = "total",
+  initialClass = "Residential",
+  onNavigate,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  initialTab?: "total" | "cross" | "compare"
+  initialClass?: string
+  onNavigate?: (screen: ScreenId) => void
+}) {
+  const [activeTab, setActiveTab] = useState<"total" | "cross" | "compare">(initialTab)
+  const [classA, setClassA] = useState<string>(initialClass || "Residential")
+  const [classB, setClassB] = useState<string>("Commercial")
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab)
+      if (initialClass && initialClass !== "All") {
+        setClassA(initialClass)
+        setClassB(initialClass === "Residential" ? "Commercial" : "Residential")
+      }
+    }
+  }, [isOpen, initialTab, initialClass])
+
+  // Close on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    if (isOpen) window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  const billedVolume = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0) // 139,499
+  const totalProduction = 193748
+  const nrwVolume = 54249
+  const totalRevenue = CUSTOMER_CLASS.reduce((s, c) => s + c.revenue, 0) // 5,185,000
+  const totalAccounts = CUSTOMER_CLASS.reduce((s, c) => s + c.accounts, 0) // 10,000
+
+  // Chart data: Volume % vs Revenue % side-by-side
+  const comparisonData = CUSTOMER_CLASS.map(c => {
+    const volShare = Number(((c.value / billedVolume) * 100).toFixed(1))
+    const revShare = Number(((c.revenue / totalRevenue) * 100).toFixed(1))
+    const effectiveRate = Number((c.revenue / c.value).toFixed(2))
+    const avgBill = Math.round(c.revenue / c.accounts)
+    const avgVol = Number((c.value / c.accounts).toFixed(1))
+    return {
+      name: c.name,
+      volume: c.value,
+      revenue: c.revenue,
+      accounts: c.accounts,
+      volShare,
+      revShare,
+      effectiveRate,
+      avgBill,
+      avgVol,
+      color: c.color,
+    }
+  })
+
+  // Tariff chart data sorted highest to lowest rate
+  const tariffData = [...comparisonData].sort((a, b) => b.effectiveRate - a.effectiveRate)
+
+  // Head-to-head comparison objects
+  const objA = comparisonData.find(c => c.name === classA) || comparisonData[0]
+  const objB = comparisonData.find(c => c.name === classB) || comparisonData[1]
+
+  const volRatio = (objA.volume / objB.volume).toFixed(1)
+  const revRatio = (objA.revenue / objB.revenue).toFixed(1)
+  const rateRatio = (objA.effectiveRate / objB.effectiveRate).toFixed(2)
+  const billRatio = (objA.avgBill / objB.avgBill).toFixed(1)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-auto"
+      >
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between bg-slate-50/70">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-[#0038A8]/10 text-[#0038A8] px-2 py-0.5 rounded-full">
+                <Sparkles size={11} /> Customer Class Drill Down & Cross-Comparison
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">TCWD Billing Analytics</span>
+            </div>
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 leading-snug">
+              Customer Class Volume vs. Revenue Analysis
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Compare total billed water with each customer class, and explore how revenue differs across customer classes.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors ml-4 flex-shrink-0"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Executive Summary Stat Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-3 bg-white border-b border-slate-100 text-xs">
+          <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+            <span className="text-[10px] text-slate-400 block font-medium">Total Billed Water</span>
+            <span className="font-mono font-bold text-slate-900 text-sm">139,499 m³</span>
+            <span className="text-[10px] text-blue-600 block">72.0% of {totalProduction.toLocaleString()} m³ produced</span>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+            <span className="text-[10px] text-slate-400 block font-medium">Total Water Revenue</span>
+            <span className="font-mono font-bold text-emerald-600 text-sm">₱5.185 Million</span>
+            <span className="text-[10px] text-slate-500 block">Across 10,000 active meters</span>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+            <span className="text-[10px] text-slate-400 block font-medium">Average Tariff Yield</span>
+            <span className="font-mono font-bold text-slate-900 text-sm">₱37.17 / m³</span>
+            <span className="text-[10px] text-slate-500 block">Blended district-wide rate</span>
+          </div>
+          <div className="bg-red-50 rounded-lg p-2.5 border border-red-100">
+            <span className="text-[10px] text-red-500 block font-medium">NRW System Loss</span>
+            <span className="font-mono font-bold text-red-600 text-sm">54,249 m³</span>
+            <span className="text-[10px] text-red-400 block">28.0% loss · ₱1.30M uncollected</span>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1 px-6 pt-3 border-b border-slate-200 bg-slate-50/50 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("total")}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+              activeTab === "total"
+                ? "border-[#0038A8] text-[#0038A8] bg-white shadow-xs"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60"
+            }`}
+          >
+            1. Total Billed vs. Customer Class
+          </button>
+          <button
+            onClick={() => setActiveTab("cross")}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+              activeTab === "cross"
+                ? "border-[#0038A8] text-[#0038A8] bg-white shadow-xs"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60"
+            }`}
+          >
+            2. Cross-Class Revenue & Tariff Dynamics
+          </button>
+          <button
+            onClick={() => setActiveTab("compare")}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+              activeTab === "compare"
+                ? "border-[#0038A8] text-[#0038A8] bg-white shadow-xs"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60"
+            }`}
+          >
+            3. Head-to-Head Class Comparison
+          </button>
+        </div>
+
+        {/* Modal Scrollable Body */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-800">
+          {/* TAB 1: Total Billed vs. Customer Class */}
+          {activeTab === "total" && (
+            <div className="space-y-6">
+              {/* Narrative Banner 1 */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50/60 rounded-xl p-4 border border-blue-200/70">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#0038A8] text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Narrative 1: How Total Billed Water is Divided Across Customer Classes
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      Every month, TCWD produces <strong className="text-slate-800">193,748 m³</strong> of treated water. After{" "}
+                      <strong className="text-red-600">54,249 m³ (28.0%)</strong> is lost through physical leaks and unauthorized consumption (NRW), the remaining{" "}
+                      <strong className="text-blue-700 font-bold">139,499 m³ (72.0%)</strong> is delivered and billed to our <strong className="text-slate-800">10,000 customer accounts</strong>.
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      <strong className="text-slate-800">Key takeaway for everyone:</strong> Residential households consume more than{" "}
+                      <strong className="text-blue-700">4 out of every 5 liters</strong> of all billed water in Tabaco City (80.9%).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual Proportion Bar (100% of Billed Water) */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-700">Total Billed Volume Share (100% = 139,499 m³)</span>
+                  <span className="text-xs text-slate-400 font-mono">10,000 Accounts</span>
+                </div>
+                <div className="h-5 rounded-lg overflow-hidden flex bg-slate-100 shadow-inner">
+                  {comparisonData.map(c => (
+                    <div
+                      key={c.name}
+                      style={{ width: `${c.volShare}%`, backgroundColor: c.color }}
+                      className="h-full relative group cursor-pointer transition-opacity hover:opacity-90 flex items-center justify-center text-[10px] text-white font-bold"
+                      title={`${c.name}: ${c.volume.toLocaleString()} m³ (${c.volShare}%)`}
+                    >
+                      {c.volShare > 7 && `${c.volShare}%`}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px]">
+                  {comparisonData.map(c => (
+                    <div key={c.name} className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                      <span className="font-medium text-slate-700">{c.name}:</span>
+                      <span className="font-mono text-slate-500">{c.volume.toLocaleString()} m³ ({c.volShare}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Detailed Breakdown Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {comparisonData.map(c => (
+                  <div
+                    key={c.name}
+                    onClick={() => {
+                      setClassA(c.name)
+                      setClassB(c.name === "Residential" ? "Commercial" : "Residential")
+                      setActiveTab("compare")
+                    }}
+                    className="p-4 rounded-xl border border-slate-200 hover:border-[#0038A8] hover:shadow-md transition-all cursor-pointer bg-white group flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                          {c.name}
+                        </span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
+                          {c.volShare}%
+                        </span>
+                      </div>
+                      <p className="text-xl font-bold font-mono text-slate-900">{c.volume.toLocaleString()} <span className="text-xs font-normal text-slate-400">m³</span></p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {c.accounts.toLocaleString()} active accounts ({(c.accounts / totalAccounts * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-500">
+                        <span>Avg per customer:</span>
+                        <span className="font-semibold text-slate-800 font-mono">{c.avgVol} m³/mo</span>
+                      </div>
+                      <div className="flex justify-between text-slate-500">
+                        <span>Revenue generated:</span>
+                        <span className="font-semibold text-slate-800 font-mono">₱{(c.revenue / 1000).toFixed(0)}k</span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0038A8] group-hover:underline pt-1">
+                        Compare with other classes <ArrowRight size={10} />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Volume Comparison Graph */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                  Graph: Billed Water Volume by Customer Class (m³)
+                </h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={comparisonData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#475569" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                      <RTooltip content={(p: any) => <ChartTip {...p} fmt={v => `${v.toLocaleString()} m³ (${((v / billedVolume) * 100).toFixed(1)}% of billed total)`} />} />
+                      <Bar dataKey="volume" name="Billed Volume (m³)" radius={[6, 6, 0, 0]}>
+                        {comparisonData.map(c => <Cell key={c.name} fill={c.color} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Cross-Class Revenue & Tariff Dynamics */}
+          {activeTab === "cross" && (
+            <div className="space-y-6">
+              {/* Narrative Banner 2 */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50/60 rounded-xl p-4 border border-emerald-200/70">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Narrative 2: Why Water Volume Does Not Equal Revenue (Cross-Class Comparison)
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      You might expect a customer class using 81% of the water to generate 81% of the revenue. But in water utility economics, it doesn't work that way!
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      <strong className="text-emerald-800 font-semibold">The Social Tariff System:</strong> Residential water is kept affordable (averaging <strong className="text-slate-900">₱30.86/m³</strong>) because clean water is a basic human necessity. To keep TCWD financially sustainable, Commercial and Government classes pay premium commercial rates (<strong className="text-slate-900">₱58.15 to ₱70.00/m³</strong>).
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      <strong className="text-slate-800">The Big Result:</strong> Commercial and Government accounts use only <strong className="text-slate-900 font-bold">15.7% of the water</strong>, but generate over <strong className="text-emerald-700 font-bold">27.1% (₱1.41 Million)</strong> of the district's revenue!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Side-by-Side Visual Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Graph A: Volume % vs Revenue % */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-xs font-bold text-slate-800">Volume Share % vs. Revenue Share %</h4>
+                    <span className="text-[10px] text-slate-400">Class contribution comparison</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mb-4">
+                    Compares what percentage of water each class uses against what percentage of money it generates.
+                  </p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={comparisonData} margin={{ top: 10, right: 10, left: -10, bottom: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#475569" }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} unit="%" />
+                        <RTooltip content={(p: any) => <ChartTip {...p} fmt={v => `${v}%`} />} />
+                        <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
+                        <Bar dataKey="volShare" name="Share of Water Billed (%)" fill="#0038A8" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="revShare" name="Share of Revenue Generated (%)" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Graph B: Effective Rate per m³ */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-xs font-bold text-slate-800">Effective Tariff Rate (₱ per m³)</h4>
+                    <span className="text-[10px] text-slate-400">Revenue yield per m³</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mb-4">
+                    How much revenue TCWD collects per cubic meter of water delivered to each class.
+                  </p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={tariffData} layout="vertical" margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} unit="₱" />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#475569" }} axisLine={false} tickLine={false} width={105} />
+                        <RTooltip content={(p: any) => <ChartTip {...p} fmt={v => `₱${v.toFixed(2)} / m³`} />} />
+                        <ReferenceLine x={37.17} stroke="#F59E0B" strokeDasharray="3 3" label={{ value: "District Avg: ₱37.17", fill: "#B45309", fontSize: 9, position: "top" }} />
+                        <Bar dataKey="effectiveRate" name="Effective Rate (₱/m³)" radius={[0, 6, 6, 0]}>
+                          {tariffData.map(c => <Cell key={c.name} fill={c.color} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plain English Comparison Table */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-800">
+                    Cross-Class Revenue & Efficiency Summary Table
+                  </h4>
+                  <span className="text-[11px] text-slate-500">September 2025</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                      <tr>
+                        <th className="py-2.5 px-4">Customer Class</th>
+                        <th className="py-2.5 px-4 text-right">Billed Volume</th>
+                        <th className="py-2.5 px-4 text-right">Vol Share</th>
+                        <th className="py-2.5 px-4 text-right">Total Revenue</th>
+                        <th className="py-2.5 px-4 text-right">Rev Share</th>
+                        <th className="py-2.5 px-4 text-right">Effective Rate</th>
+                        <th className="py-2.5 px-4 text-right">Avg Bill / Acct</th>
+                        <th className="py-2.5 px-4">Executive Summary Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {comparisonData.map(c => (
+                        <tr key={c.name} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4 font-bold flex items-center gap-2 text-slate-900">
+                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                            {c.name}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono">{c.volume.toLocaleString()} m³</td>
+                          <td className="py-3 px-4 text-right font-mono font-semibold text-blue-600">{c.volShare}%</td>
+                          <td className="py-3 px-4 text-right font-mono">₱{c.revenue.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-right font-mono font-semibold text-emerald-600">{c.revShare}%</td>
+                          <td className="py-3 px-4 text-right font-mono font-bold text-slate-800">₱{c.effectiveRate.toFixed(2)}/m³</td>
+                          <td className="py-3 px-4 text-right font-mono text-slate-700">₱{c.avgBill.toLocaleString()}/mo</td>
+                          <td className="py-3 px-4 text-slate-500 text-[11px]">
+                            {c.name === "Residential" && "Volume anchor; subsidized rate for 8,240 households"}
+                            {c.name === "Commercial" && "High-tariff cross-subsidy; pays 1.88× residential rate"}
+                            {c.name === "Government" && "Highest revenue yield; ₱3,564/mo bill per connection"}
+                            {c.name === "Semi-Commercial" && "Neighborhood retail and small family enterprise rate"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Head-to-Head Class Comparison */}
+          {activeTab === "compare" && (
+            <div className="space-y-6">
+              {/* Presets and Selectors */}
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <Scale size={14} className="text-[#0038A8]" /> Choose Two Classes to Compare Head-to-Head
+                  </h4>
+                  {/* Quick preset buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-slate-400 font-medium">Quick Presets:</span>
+                    <button
+                      onClick={() => { setClassA("Residential"); setClassB("Commercial") }}
+                      className="text-[11px] px-2 py-1 rounded bg-white border border-slate-200 hover:border-[#0038A8] text-slate-700 transition-colors"
+                    >
+                      Residential vs Commercial
+                    </button>
+                    <button
+                      onClick={() => { setClassA("Residential"); setClassB("Government") }}
+                      className="text-[11px] px-2 py-1 rounded bg-white border border-slate-200 hover:border-[#0038A8] text-slate-700 transition-colors"
+                    >
+                      Residential vs Government
+                    </button>
+                    <button
+                      onClick={() => { setClassA("Commercial"); setClassB("Government") }}
+                      className="text-[11px] px-2 py-1 rounded bg-white border border-slate-200 hover:border-[#0038A8] text-slate-700 transition-colors"
+                    >
+                      Commercial vs Government
+                    </button>
+                    <button
+                      onClick={() => { setClassA("Commercial"); setClassB("Semi-Commercial") }}
+                      className="text-[11px] px-2 py-1 rounded bg-white border border-slate-200 hover:border-[#0038A8] text-slate-700 transition-colors"
+                    >
+                      Commercial vs Semi-Comm.
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">Class A (Base)</label>
+                    <select
+                      value={classA}
+                      onChange={e => setClassA(e.target.value)}
+                      className="w-full text-xs font-semibold p-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0038A8]/20 focus:border-[#0038A8]"
+                    >
+                      {CUSTOMER_CLASS.map(c => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">Class B (Compare Against)</label>
+                    <select
+                      value={classB}
+                      onChange={e => setClassB(e.target.value)}
+                      className="w-full text-xs font-semibold p-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0038A8]/20 focus:border-[#0038A8]"
+                    >
+                      {CUSTOMER_CLASS.map(c => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Head-to-Head Comparison Card Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Class A Card */}
+                <div className="p-5 rounded-xl border-2 bg-white" style={{ borderColor: objA.color }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: objA.color }} />
+                    <h3 className="text-base font-bold text-slate-900">{objA.name}</h3>
+                  </div>
+                  <div className="space-y-3 mt-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Monthly Billed Volume</span>
+                      <span className="text-lg font-bold font-mono text-slate-900">{objA.volume.toLocaleString()} m³</span>
+                      <span className="text-[10px] text-blue-600 block">{objA.volShare}% of total billed water</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Monthly Billed Revenue</span>
+                      <span className="text-lg font-bold font-mono text-emerald-600">₱{objA.revenue.toLocaleString()}</span>
+                      <span className="text-[10px] text-emerald-600 block">{objA.revShare}% of total revenue</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex justify-between">
+                      <span className="text-slate-500">Effective Rate:</span>
+                      <span className="font-bold font-mono text-slate-900">₱{objA.effectiveRate.toFixed(2)}/m³</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Avg Consumption / Acct:</span>
+                      <span className="font-bold font-mono text-slate-900">{objA.avgVol} m³/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Avg Monthly Bill:</span>
+                      <span className="font-bold font-mono text-slate-900">₱{objA.avgBill.toLocaleString()}/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Active Accounts:</span>
+                      <span className="font-bold font-mono text-slate-900">{objA.accounts.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Multiplier / Comparison Delta Column */}
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/80 flex flex-col justify-center space-y-4 text-xs">
+                  <div className="text-center pb-2 border-b border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Head-to-Head Ratio</span>
+                    <span className="text-xs font-semibold text-slate-700">{objA.name} vs. {objB.name}</span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block font-medium">Volume Multiplier</span>
+                    <span className="text-base font-bold font-mono text-[#0038A8]">
+                      {Number(volRatio) >= 1 ? `${volRatio}× more` : `${(1 / Number(volRatio)).toFixed(1)}× less`}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {objA.volume > objB.volume ? `${objA.name} consumes more` : `${objB.name} consumes more`}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block font-medium">Revenue Multiplier</span>
+                    <span className="text-base font-bold font-mono text-emerald-600">
+                      {Number(revRatio) >= 1 ? `${revRatio}× more` : `${(1 / Number(revRatio)).toFixed(1)}× less`}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {objA.revenue > objB.revenue ? `${objA.name} earns more` : `${objB.name} earns more`}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block font-medium">Tariff Rate Difference</span>
+                    <span className="text-base font-bold font-mono text-purple-700">
+                      ₱{Math.abs(objA.effectiveRate - objB.effectiveRate).toFixed(2)}/m³
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {objA.effectiveRate > objB.effectiveRate ? `${objA.name} rate is higher` : `${objB.name} rate is higher`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Class B Card */}
+                <div className="p-5 rounded-xl border-2 bg-white" style={{ borderColor: objB.color }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: objB.color }} />
+                    <h3 className="text-base font-bold text-slate-900">{objB.name}</h3>
+                  </div>
+                  <div className="space-y-3 mt-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Monthly Billed Volume</span>
+                      <span className="text-lg font-bold font-mono text-slate-900">{objB.volume.toLocaleString()} m³</span>
+                      <span className="text-[10px] text-blue-600 block">{objB.volShare}% of total billed water</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Monthly Billed Revenue</span>
+                      <span className="text-lg font-bold font-mono text-emerald-600">₱{objB.revenue.toLocaleString()}</span>
+                      <span className="text-[10px] text-emerald-600 block">{objB.revShare}% of total revenue</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex justify-between">
+                      <span className="text-slate-500">Effective Rate:</span>
+                      <span className="font-bold font-mono text-slate-900">₱{objB.effectiveRate.toFixed(2)}/m³</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Avg Consumption / Acct:</span>
+                      <span className="font-bold font-mono text-slate-900">{objB.avgVol} m³/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Avg Monthly Bill:</span>
+                      <span className="font-bold font-mono text-slate-900">₱{objB.avgBill.toLocaleString()}/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Active Accounts:</span>
+                      <span className="font-bold font-mono text-slate-900">{objB.accounts.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Plain-English Narrative between Class A and Class B */}
+              <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-5">
+                <h4 className="text-xs font-bold text-blue-900 mb-2 flex items-center gap-1.5">
+                  <Info size={14} className="text-[#0038A8]" /> Executive Story: {objA.name} vs. {objB.name}
+                </h4>
+                <div className="text-xs text-slate-700 space-y-2 leading-relaxed">
+                  {classA === classB ? (
+                    <p>Please select two different customer classes above to see their comparative narrative.</p>
+                  ) : (
+                    <>
+                      <p>
+                        • <strong>Water Volume Ratio:</strong> {objA.name} accounts consume{" "}
+                        <strong>{objA.volume.toLocaleString()} m³</strong> ({objA.volShare}%) compared to {objB.name}'s{" "}
+                        <strong>{objB.volume.toLocaleString()} m³</strong> ({objB.volShare}%). That makes {objA.name}{" "}
+                        <strong>{volRatio}×</strong> the water demand of {objB.name}.
+                      </p>
+                      <p>
+                        • <strong>Revenue Generation:</strong> {objA.name} contributes{" "}
+                        <strong>₱{objA.revenue.toLocaleString()}</strong> ({objA.revShare}% of district total) versus {objB.name}'s{" "}
+                        <strong>₱{objB.revenue.toLocaleString()}</strong> ({objB.revShare}%).
+                      </p>
+                      <p>
+                        • <strong>Rate & Billing Dynamics:</strong> {objA.name} pays an average effective tariff of{" "}
+                        <strong>₱{objA.effectiveRate.toFixed(2)}/m³</strong>, while {objB.name} pays{" "}
+                        <strong>₱{objB.effectiveRate.toFixed(2)}/m³</strong> (a difference of ₱{Math.abs(objA.effectiveRate - objB.effectiveRate).toFixed(2)}/m³).
+                        Consequently, the average monthly bill for a {objA.name} customer is{" "}
+                        <strong>₱{objA.avgBill.toLocaleString()}</strong> vs. <strong>₱{objB.avgBill.toLocaleString()}</strong> for a {objB.name} customer.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="text-xs text-slate-500 flex items-center gap-1.5">
+            <HelpCircle size={13} className="text-slate-400" />
+            <span>Tariff structure complies with LWUA regulatory guidelines</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {onNavigate && (
+              <button
+                onClick={() => {
+                  onClose()
+                  onNavigate("descriptive")
+                }}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors"
+              >
+                Open in Descriptive Screen →
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-xs font-semibold px-4 py-1.5 rounded-lg bg-[#0038A8] text-white hover:bg-[#002D80] transition-colors shadow-xs"
+            >
+              Done / Close
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ── SCREEN: DASHBOARD ──────────────────────────────────────────────────────
-function DashboardScreen() {
+function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void }) {
+  const [drilldownOpen, setDrilldownOpen] = useState(false)
+  const [drilldownTab, setDrilldownTab] = useState<"total" | "cross" | "compare">("total")
+  const [drilldownClass, setDrilldownClass] = useState<string>("Residential")
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -578,13 +1252,13 @@ function DashboardScreen() {
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Total Accounts" value="10,000" change={0.8} changeLabel="vs prev. month"
-          color="#0038A8" sparkData={[9780,9810,9840,9862,9891,9920,9960,10000]} />
+          color="#0038A8" sparkData={[9780,9850,9790,9920,9860,9950,9880,10000]} />
         <KPICard title="Total Consumption" value="193,748" unit="m³" change={1.1} changeLabel="vs baseline"
-          color="#0284C7" sparkData={[182000,184000,186000,188000,189000,191000,192000,193748]} />
+          color="#0284C7" sparkData={[182000,188500,183200,190800,185600,192400,187000,193748]} />
         <KPICard title="Total Revenue" value="₱5.25M" change={0.6} changeLabel="vs target"
-          color="#10B981" sparkData={[4800000,4900000,5000000,5050000,5100000,5150000,5200000,5249087]} />
+          color="#10B981" sparkData={[4800000,5050000,4860000,5120000,4950000,5200000,5020000,5249087]} />
         <KPICard title="Avg per Account" value="19.4" unit="m³" change={0.3} changeLabel="steady trend"
-          color="#F59E0B" sparkData={[18.8,18.9,19.0,19.1,19.2,19.2,19.3,19.4]} />
+          color="#F59E0B" sparkData={[18.8,19.3,18.7,19.5,18.9,19.6,19.0,19.4]} />
       </div>
 
       {/* Main content */}
@@ -638,50 +1312,159 @@ function DashboardScreen() {
         <div className="space-y-4">
           {/* NRW Status */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-slate-800 mb-1">Non-Revenue Water Status</h3>
+            <h3 className="text-sm font-semibold text-slate-800 mb-0.5">Non-Revenue Water Status</h3>
+            {/* Plain-language description for non-technical readers */}
+            <p className="text-[11px] text-slate-400 mb-2 leading-relaxed">
+              <span className="font-medium text-slate-500">What is NRW?</span> — Water that is produced and pumped out but never billed to any customer. It includes pipe leaks, meter errors, and illegal connections. The lower the percentage, the better.
+            </p>
             <p className="text-xs text-slate-500 mb-3">LWUA Standard: ≤20% · Current: <span className="font-semibold text-red-500">28.0% ↑</span></p>
             <NRWGauge value={28} target={20} max={40} />
             <div className="grid grid-cols-2 gap-2 mt-3">
               <div className="bg-slate-50 rounded-lg p-3">
                 <p className="text-[10px] text-slate-500 mb-1">Billed Volume</p>
-                <p className="font-mono font-bold text-slate-900 text-sm">119,671 m³</p>
-                <p className="text-[10px] text-slate-400">74.0% of production</p>
+                <p className="font-mono font-bold text-slate-900 text-sm">139,499 m³</p>
+                <p className="text-[10px] text-slate-400">72.0% of production</p>
               </div>
-              <div className="bg-red-50 rounded-lg p-3">
-                <p className="text-[10px] text-red-500 mb-1">NRW Loss Volume</p>
-                <p className="font-mono font-bold text-red-600 text-sm">74,077 m³</p>
-                <p className="text-[10px] text-red-400">₱1.78M/mo revenue loss</p>
+              <div className="bg-red-50 rounded-lg p-3 relative group">
+                <p className="text-[10px] text-red-500 mb-1 font-semibold">NRW System Loss</p>
+                <p className="font-mono font-bold text-red-600 text-sm">54,249 m³</p>
+                <p className="text-[10px] text-red-400">₱1.30M/mo revenue loss</p>
+                {/* Tooltip for non-technical users */}
+                <div className="absolute bottom-full left-0 mb-2 w-52 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg px-3 py-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                  This is the volume of water lost every month — through leaks, faulty meters, or unauthorized use — that the district cannot charge or collect payment for.
+                  <div className="absolute top-full left-4 border-4 border-transparent border-t-slate-800" />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Customer Class Donut */}
-          <ChartCard title="Customer Class Distribution">
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <ResponsiveContainer width="100%" height={130}>
-                  <PieChart>
-                    <Pie key="donut" data={CUSTOMER_CLASS} cx="50%" cy="50%" innerRadius={38} outerRadius={58}
-                      dataKey="value" paddingAngle={2}>
-                      {CUSTOMER_CLASS.map((c, i) => <Cell key={`pie-${i}`} fill={c.color} />)}
-                    </Pie>
-                    <RTooltip key="tooltip" content={(p: any) => <ChartTip {...p} fmt={v => `${v.toLocaleString()} m³`} />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="space-y-2 flex-1">
-                {CUSTOMER_CLASS.map(c => (
-                  <div key={c.name} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.color }} />
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-medium text-slate-700 truncate">{c.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{((c.value / 171081) * 100).toFixed(1)}%</p>
+          {/* Customer Class Donut with Drilldown */}
+          {(() => {
+            const billedVolume = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0)
+            const nrwVolume = 54249
+            const totalProduction = billedVolume + nrwVolume
+            const largestClass = CUSTOMER_CLASS.reduce((a, b) => a.value > b.value ? a : b)
+            const largestPct = ((largestClass.value / billedVolume) * 100).toFixed(0)
+            return (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm relative">
+                <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                      Customer Class Distribution
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                      Of the <span className="font-semibold text-slate-600">{totalProduction.toLocaleString()} m³</span> total production,{" "}
+                      <span className="font-semibold text-slate-600">{billedVolume.toLocaleString()} m³</span> was billed — here's how it breaks down by customer type
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setDrilldownClass("Residential")
+                      setDrilldownTab("total")
+                      setDrilldownOpen(true)
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#0038A8] bg-[#0038A8]/10 hover:bg-[#0038A8]/20 border border-[#0038A8]/20 px-2.5 py-1.5 rounded-lg transition-all shadow-2xs flex-shrink-0 ml-2 cursor-pointer group"
+                    title="Click to open cross-class comparison & revenue analysis"
+                  >
+                    <Sparkles size={11} className="text-[#0038A8] group-hover:scale-110 transition-transform" />
+                    <span>Drill Down ↗</span>
+                  </button>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex-1 relative cursor-pointer group"
+                      onClick={() => {
+                        setDrilldownClass("Residential")
+                        setDrilldownTab("total")
+                        setDrilldownOpen(true)
+                      }}
+                      title="Click donut to open Customer Class Drill Down"
+                    >
+                      <ResponsiveContainer width="100%" height={140}>
+                        <PieChart>
+                          <Pie key="donut" data={CUSTOMER_CLASS} cx="50%" cy="50%" innerRadius={40} outerRadius={60}
+                            dataKey="value" paddingAngle={2} className="cursor-pointer">
+                            {CUSTOMER_CLASS.map((c, i) => <Cell key={`pie-${i}`} fill={c.color} />)}
+                          </Pie>
+                          <RTooltip key="tooltip" content={(p: any) => <ChartTip {...p} fmt={v => `${v.toLocaleString()} m³ (Click to drill down)`} />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      {/* Center label — billed total inside the donut */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none group-hover:scale-105 transition-transform">
+                        <span className="text-[10px] text-slate-400 leading-none">Billed</span>
+                        <span className="text-sm font-bold text-slate-800 font-mono leading-tight">{billedVolume.toLocaleString()}</span>
+                        <span className="text-[9px] text-slate-400 leading-none">m³</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 flex-1">
+                      {CUSTOMER_CLASS.map(c => {
+                        const pct = ((c.value / billedVolume) * 100).toFixed(1)
+                        const avg = (c.value / c.accounts).toFixed(1)
+                        return (
+                          <div
+                            key={c.name}
+                            onClick={() => {
+                              setDrilldownClass(c.name)
+                              setDrilldownTab("cross")
+                              setDrilldownOpen(true)
+                            }}
+                            className="flex items-start gap-1.5 p-1 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group"
+                            title={`Click to compare ${c.name} revenue and volume`}
+                          >
+                            <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: c.color }} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-semibold text-slate-700 truncate group-hover:text-[#0038A8] transition-colors">{c.name}</p>
+                                <span className="text-[9px] text-[#0038A8] opacity-0 group-hover:opacity-100 transition-opacity font-semibold">Drill →</span>
+                              </div>
+                              <p className="text-[10px] text-slate-400 font-mono">{c.value.toLocaleString()} m³ · {pct}%</p>
+                              <p className="text-[9px] text-slate-400">avg <span className="font-semibold text-slate-500">{avg} m³</span>/acct · {c.accounts.toLocaleString()} accts</p>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
-                ))}
+                  {/* Narrative — water balance connection */}
+                  <div className="mt-3 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                    <p className="text-[10px] text-blue-700 leading-relaxed">
+                      <span className="font-bold">Water Balance:</span>{" "}
+                      <span className="font-semibold">{totalProduction.toLocaleString()} m³</span> produced →{" "}
+                      <span className="font-semibold">{billedVolume.toLocaleString()} m³</span> billed (72%) +{" "}
+                      <span className="font-semibold text-red-600">{nrwVolume.toLocaleString()} m³</span> lost to NRW (28%).{" "}
+                      {largestClass.name} drives <span className="font-bold">{largestPct}%</span> of billed demand from {largestClass.accounts.toLocaleString()} connections.
+                    </p>
+                  </div>
+
+                  {/* Interactive Drilldown Prompt button */}
+                  <button
+                    onClick={() => {
+                      setDrilldownClass("Residential")
+                      setDrilldownTab("total")
+                      setDrilldownOpen(true)
+                    }}
+                    className="w-full mt-2.5 py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100/90 border border-slate-200 text-slate-700 text-[10px] font-semibold flex items-center justify-between transition-colors group cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5 text-slate-700">
+                      <Sparkles size={11} className="text-[#0038A8]" />
+                      Click for Drill Down: Total Billed vs Class & Revenue Comparisons
+                    </span>
+                    <ArrowRight size={11} className="text-slate-400 group-hover:text-[#0038A8] group-hover:translate-x-0.5 transition-all" />
+                  </button>
+                </div>
+
+                {/* Drill Down Modal */}
+                <CustomerClassDrilldownModal
+                  isOpen={drilldownOpen}
+                  onClose={() => setDrilldownOpen(false)}
+                  initialTab={drilldownTab}
+                  initialClass={drilldownClass}
+                  onNavigate={onNavigate}
+                />
               </div>
-            </div>
-          </ChartCard>
+            )
+          })()}
 
           {/* Active Alerts */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -715,10 +1498,10 @@ function DescriptiveScreen() {
 
   // Class share of total consumption (used to scale heatmap when filtered)
   const CLASS_SHARE: Record<string, number> = {
-    "Residential":     139186 / (139186 + 9849 + 18324 + 4722),
-    "Commercial":      9849   / (139186 + 9849 + 18324 + 4722),
-    "Government":      18324  / (139186 + 9849 + 18324 + 4722),
-    "Semi-Commercial": 4722   / (139186 + 9849 + 18324 + 4722),
+    "Residential":     112840 / 139499,
+    "Commercial":      10680  / 139499,
+    "Government":      11200  / 139499,
+    "Semi-Commercial": 4779   / 139499,
   }
 
   // Customer class bars: dim unselected entries, keep selected ones vivid
@@ -781,7 +1564,7 @@ function DescriptiveScreen() {
                   <motion.div
                     key={`vol-${c.name}-${activeClass}`}
                     initial={{ width: 0 }}
-                    animate={{ width: c.dimmed ? "0%" : `${(c.value / 139186) * 100}%` }}
+                    animate={{ width: c.dimmed ? "0%" : `${(c.value / 112840) * 100}%` }}
                     transition={{ duration: 0.6, delay: 0.05 }}
                     className="h-full rounded-full" style={{ background: c.color }} />
                 </div>
@@ -1979,12 +2762,12 @@ function OptimizationScreen() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {[
-                { rank: "#1", zone: "Zone 2 · Panal / Poblacion", score: "0.8420", priority: "CRITICAL", action: "Immediate Pipe Replacement & Sector Pressure Step-down", recovery: "2,678 m³", color: "text-red-600 bg-red-50 border-red-200" },
-                { rank: "#2", zone: "Zone 1 · Tabaco Center",     score: "0.7810", priority: "CRITICAL", action: "Immediate Pipe Replacement & Sector Pressure Step-down", recovery: "2,496 m³", color: "text-red-600 bg-red-50 border-red-200" },
-                { rank: "#3", zone: "Zone 15 · Sto. Cristo",      score: "0.6890", priority: "HIGH",     action: "Active Leak Detection Sweep & DMA Flow Meter Calibration", recovery: "2,132 m³", color: "text-amber-600 bg-amber-50 border-amber-200" },
-                { rank: "#4", zone: "Zone 7 · Sagrada",           score: "0.5420", priority: "HIGH",     action: "Active Leak Detection Sweep & DMA Flow Meter Calibration", recovery: "1,716 m³", color: "text-amber-600 bg-amber-50 border-amber-200" },
-                { rank: "#5", zone: "Zone 20 · Fatima",           score: "0.4180", priority: "MEDIUM",   action: "Routine Preventative Maintenance & AMR Meter Verification", recovery: "1,417 m³", color: "text-blue-600 bg-blue-50 border-blue-200" },
-                { rank: "#6", zone: "Zone 3 · Magallanes",        score: "0.2640", priority: "LOW",      action: "Routine Preventative Maintenance & AMR Meter Verification", recovery: "923 m³", color: "text-slate-600 bg-slate-100 border-slate-200" },
+                { rank: "#1", zone: "Zone 2",  score: "0.8420", priority: "CRITICAL", action: "Immediate Pipe Replacement & Sector Pressure Step-down", recovery: "2,678 m³", color: "text-red-600 bg-red-50 border-red-200" },
+                { rank: "#2", zone: "Zone 1",  score: "0.7810", priority: "CRITICAL", action: "Immediate Pipe Replacement & Sector Pressure Step-down", recovery: "2,496 m³", color: "text-red-600 bg-red-50 border-red-200" },
+                { rank: "#3", zone: "Zone 15", score: "0.6890", priority: "HIGH",     action: "Active Leak Detection Sweep & DMA Flow Meter Calibration", recovery: "2,132 m³", color: "text-amber-600 bg-amber-50 border-amber-200" },
+                { rank: "#4", zone: "Zone 7",  score: "0.5420", priority: "HIGH",     action: "Active Leak Detection Sweep & DMA Flow Meter Calibration", recovery: "1,716 m³", color: "text-amber-600 bg-amber-50 border-amber-200" },
+                { rank: "#5", zone: "Zone 20", score: "0.4180", priority: "MEDIUM",   action: "Routine Preventative Maintenance & AMR Meter Verification", recovery: "1,417 m³", color: "text-blue-600 bg-blue-50 border-blue-200" },
+                { rank: "#6", zone: "Zone 3",  score: "0.2640", priority: "LOW",      action: "Routine Preventative Maintenance & AMR Meter Verification", recovery: "923 m³", color: "text-slate-600 bg-slate-100 border-slate-200" },
               ].map(row => (
                 <tr key={row.rank} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3 font-bold text-xs text-slate-800">{row.rank}</td>
@@ -2383,8 +3166,8 @@ function ExportScreen() {
               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all">
               <option value="all">All 20 Zones</option>
               <option value="critical">Critical Zones Only (6)</option>
-              <option value="zone1">Zone 1 — Tabaco City Proper</option>
-              <option value="zone2">Zone 2 — Barangay Quinartus</option>
+              <option value="zone1">Zone 1</option>
+              <option value="zone2">Zone 2</option>
               <option value="custom">Custom Selection…</option>
             </select>
           </div>
@@ -2699,7 +3482,7 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case "dashboard":    return <DashboardScreen />
+      case "dashboard":    return <DashboardScreen onNavigate={handleNavigate} />
       case "descriptive":  return <DescriptiveScreen />
       case "predictive":   return <PredictiveScreen />
       case "shortage":     return <ShortageScreen />
