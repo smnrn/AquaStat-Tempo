@@ -16,6 +16,7 @@ import productionRouter from './production.routes';
 import analyticsRouter from './analytics.routes';
 import mlRouter from './ml.routes';
 import weatherRouter from './weather.routes';
+import dashboardRouter from './dashboard.routes';
 
 const router = Router();
 
@@ -39,6 +40,7 @@ router.get('/', (_req: Request, res: Response) => {
       analytics: `${config.apiBasePath}/${config.apiVersion}/analytics`,
       ml: `${config.apiBasePath}/${config.apiVersion}/ml`,
       weather: `${config.apiBasePath}/${config.apiVersion}/weather`,
+      dashboard: `${config.apiBasePath}/${config.apiVersion}/dashboard`,
     },
   });
 });
@@ -70,5 +72,6 @@ router.use('/production',  productionRouter);
 router.use('/analytics',   analyticsRouter);
 router.use('/ml',          mlRouter);
 router.use('/weather',     weatherRouter);
+router.use('/dashboard',   dashboardRouter);
 
 export default router;

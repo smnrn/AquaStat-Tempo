@@ -3,6 +3,7 @@ import { toast, Toaster } from "sonner"
 import { motion, AnimatePresence } from "motion/react"
 import { ImageWithFallback } from "@/app/components/ui/ImageWithFallback"
 import tcwdSeal from "@/imports/image-8.png"
+import { DashboardProvider, useDashboard } from "./context/DashboardContext"
 import {
   LayoutDashboard, BarChart3, TrendingUp, Droplets, CloudSun, Map,
   Grid3x3, Zap, Bell, Download, ChevronLeft, ChevronRight, Search, Menu,
@@ -596,11 +597,12 @@ function CustomerClassDrilldownModal({
 
   if (!isOpen) return null
 
-  const billedVolume = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0) // 139,499
-  const totalProduction = 193748
-  const nrwVolume = 54249
-  const totalRevenue = CUSTOMER_CLASS.reduce((s, c) => s + c.revenue, 0) // 5,185,000
-  const totalAccounts = CUSTOMER_CLASS.reduce((s, c) => s + c.accounts, 0) // 10,000
+  const { customerClasses: CUSTOMER_CLASS, kpi } = useDashboard()
+  const billedVolume = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0)
+  const nrwVolume = Math.round(billedVolume * (kpi.nrwPct / (100 - kpi.nrwPct || 1)))
+  const totalProduction = billedVolume + nrwVolume
+  const totalRevenue = CUSTOMER_CLASS.reduce((s, c) => s + c.revenue, 0)
+  const totalAccounts = CUSTOMER_CLASS.reduce((s, c) => s + c.accounts, 0)
 
   // Chart data: Volume % vs Revenue % side-by-side
   const comparisonData = CUSTOMER_CLASS.map(c => {
@@ -1228,6 +1230,7 @@ function CustomerClassDrilldownModal({
 
 // ── SCREEN: DASHBOARD ──────────────────────────────────────────────────────
 function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void }) {
+  const { kpi, top10Zones, annualTrend, customerClasses, refresh, loading, isLive } = useDashboard()
   const [drilldownOpen, setDrilldownOpen] = useState(false)
   const [drilldownTab, setDrilldownTab] = useState<"total" | "cross" | "compare">("total")
   const [drilldownClass, setDrilldownClass] = useState<string>("Residential")
@@ -1236,45 +1239,89 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Dashboard — Tabaco City Water District</h1>
-          <p className="text-sm text-slate-500 mt-0.5">September 2025 · Live Operations Overview</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900">Dashboard — Tabaco City Water District</h1>
+            {isLive ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Supabase Connected
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                Connecting Supabase...
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-slate-500 mt-0.5">{kpi.latestMonth || "December 2025"} · Live Operations Overview</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors">
-            <Calendar size={13} /> Sep 2025
-          </button>
-          <button className="flex items-center gap-1.5 text-xs font-medium text-white bg-[#0038A8] rounded-lg px-3 py-2 hover:bg-[#002D80] transition-colors">
-            <RefreshCw size={13} /> Refresh Data
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white rounded-lg px-3 py-2 shadow-2xs">
+            <Calendar size={13} className="text-slate-400" /> {kpi.latestMonth || "Dec 2025"}
+          </div>
+          <button
+            onClick={() => refresh()}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs font-medium text-white bg-[#0038A8] rounded-lg px-3 py-2 hover:bg-[#002D80] disabled:opacity-60 transition-all shadow-sm cursor-pointer"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+            {loading ? "Refreshing..." : "Refresh Data"}
           </button>
         </div>
       </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Accounts" value="10,000" change={0.8} changeLabel="vs prev. month"
-          color="#0038A8" sparkData={[9780,9850,9790,9920,9860,9950,9880,10000]} />
-        <KPICard title="Total Consumption" value="193,748" unit="m³" change={1.1} changeLabel="vs baseline"
-          color="#0284C7" sparkData={[182000,188500,183200,190800,185600,192400,187000,193748]} />
-        <KPICard title="Total Revenue" value="₱5.25M" change={0.6} changeLabel="vs target"
-          color="#10B981" sparkData={[4800000,5050000,4860000,5120000,4950000,5200000,5020000,5249087]} />
-        <KPICard title="Avg per Account" value="19.4" unit="m³" change={0.3} changeLabel="steady trend"
-          color="#F59E0B" sparkData={[18.8,19.3,18.7,19.5,18.9,19.6,19.0,19.4]} />
+        <KPICard
+          title="Total Accounts"
+          value={kpi.totalAccounts.toLocaleString()}
+          change={kpi.prevMonthAccounts ? Number((((kpi.totalAccounts - kpi.prevMonthAccounts) / kpi.prevMonthAccounts) * 100).toFixed(1)) : 0.8}
+          changeLabel="vs prev. month"
+          color="#0038A8"
+          sparkData={[18200, 18450, 18600, 18900, 19150, 19400, 19550, kpi.totalAccounts]}
+        />
+        <KPICard
+          title="Total Consumption"
+          value={kpi.totalConsumption.toLocaleString()}
+          unit="m³"
+          change={kpi.prevMonthConsumption ? Number((((kpi.totalConsumption - kpi.prevMonthConsumption) / kpi.prevMonthConsumption) * 100).toFixed(1)) : 1.1}
+          changeLabel="vs prev. month"
+          color="#0284C7"
+          sparkData={[320000, 335000, 342000, 350000, 358000, 365000, 372000, kpi.totalConsumption]}
+        />
+        <KPICard
+          title="Total Revenue"
+          value={`₱${(kpi.totalRevenue / 1_000_000).toFixed(2)}M`}
+          change={kpi.prevMonthRevenue ? Number((((kpi.totalRevenue - kpi.prevMonthRevenue) / kpi.prevMonthRevenue) * 100).toFixed(1)) : 0.6}
+          changeLabel="vs prev. month"
+          color="#10B981"
+          sparkData={[8900000, 9200000, 9500000, 9800000, 10200000, 11000000, 11800000, kpi.totalRevenue]}
+        />
+        <KPICard
+          title="Avg per Account"
+          value={kpi.avgPerAccount.toFixed(1)}
+          unit="m³"
+          change={0.3}
+          changeLabel="steady trend"
+          color="#F59E0B"
+          sparkData={[18.8, 19.1, 18.9, 19.3, 19.0, 19.4, 19.2, kpi.avgPerAccount]}
+        />
       </div>
 
       {/* Main content */}
       <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-4">
         {/* Left column */}
         <div className="space-y-4">
-          <ChartCard title="Consumption by Zone — Sep 2025 (Top 10)">
+          <ChartCard title={`Consumption by Zone — ${kpi.latestMonth || "Dec 2025"} (Top 10)`}>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={TOP10_ZONES} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
+              <BarChart data={top10Zones} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
                 <XAxis key="xaxis" type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false}
                   tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
                 <YAxis key="yaxis" type="category" dataKey="name" tick={{ fontSize: 11, fill: "#475569" }} width={130} axisLine={false} tickLine={false} />
                 <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
                 <RTooltip key="tooltip" content={(p: any) => <ChartTip {...p} fmt={v => `${v.toLocaleString()} m³`} />} />
                 <Bar key="bar-consumption" dataKey="consumption" name="Consumption m³" fill="#0038A8" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                  {TOP10_ZONES.map((z, i) => (
+                  {top10Zones.map((z, i) => (
                     <Cell key={`zone-${i}`} fill={z.status === "critical" ? "#D32F2F" : z.status === "warning" ? "#F59E0B" : "#0038A8"} />
                   ))}
                 </Bar>
@@ -1282,7 +1329,7 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title="Annual Consumption Trend — 2017 to 2025">
+          <ChartCard title={`Annual Consumption Trend — 2017 to ${kpi.latestYear || 2025}`}>
             {/* Gradient defined outside recharts SVG to avoid duplicate <defs> siblings */}
             <svg style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden>
               <defs>
@@ -1293,7 +1340,7 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
               </defs>
             </svg>
             <ResponsiveContainer width="100%" height={200}>
-              <ComposedChart data={ANNUAL_TREND} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
+              <ComposedChart data={annualTrend} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
                 <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
                 <XAxis key="xaxis" dataKey="year" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                 <YAxis key="yaxis" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false}
@@ -1317,18 +1364,18 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
             <p className="text-[11px] text-slate-400 mb-2 leading-relaxed">
               <span className="font-medium text-slate-500">What is NRW?</span> — Water that is produced and pumped out but never billed to any customer. It includes pipe leaks, meter errors, and illegal connections. The lower the percentage, the better.
             </p>
-            <p className="text-xs text-slate-500 mb-3">LWUA Standard: ≤20% · Current: <span className="font-semibold text-red-500">28.0% ↑</span></p>
-            <NRWGauge value={28} target={20} max={40} />
+            <p className="text-xs text-slate-500 mb-3">LWUA Standard: ≤20% · Current: <span className={`font-semibold ${kpi.nrwPct > 20 ? "text-red-500" : "text-emerald-600"}`}>{kpi.nrwPct.toFixed(1)}% {kpi.nrwPct > 20 ? "↑" : "✓"}</span></p>
+            <NRWGauge value={kpi.nrwPct} target={20} max={40} />
             <div className="grid grid-cols-2 gap-2 mt-3">
               <div className="bg-slate-50 rounded-lg p-3">
                 <p className="text-[10px] text-slate-500 mb-1">Billed Volume</p>
-                <p className="font-mono font-bold text-slate-900 text-sm">139,499 m³</p>
-                <p className="text-[10px] text-slate-400">72.0% of production</p>
+                <p className="font-mono font-bold text-slate-900 text-sm">{Math.round(kpi.totalConsumption).toLocaleString()} m³</p>
+                <p className="text-[10px] text-slate-400">{(100 - kpi.nrwPct).toFixed(1)}% of production</p>
               </div>
               <div className="bg-red-50 rounded-lg p-3 relative group">
                 <p className="text-[10px] text-red-500 mb-1 font-semibold">NRW System Loss</p>
-                <p className="font-mono font-bold text-red-600 text-sm">54,249 m³</p>
-                <p className="text-[10px] text-red-400">₱1.30M/mo revenue loss</p>
+                <p className="font-mono font-bold text-red-600 text-sm">{Math.round(kpi.totalConsumption * (kpi.nrwPct / (100 - kpi.nrwPct || 1))).toLocaleString()} m³</p>
+                <p className="text-[10px] text-red-400">₱{((kpi.totalRevenue / (kpi.totalConsumption || 1)) * (kpi.totalConsumption * (kpi.nrwPct / (100 - kpi.nrwPct || 1))) / 1_000_000).toFixed(2)}M/mo loss</p>
                 {/* Tooltip for non-technical users */}
                 <div className="absolute bottom-full left-0 mb-2 w-52 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg px-3 py-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
                   This is the volume of water lost every month — through leaks, faulty meters, or unauthorized use — that the district cannot charge or collect payment for.
@@ -1340,11 +1387,12 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
 
           {/* Customer Class Donut with Drilldown */}
           {(() => {
+            const CUSTOMER_CLASS = customerClasses
             const billedVolume = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0)
-            const nrwVolume = 54249
+            const nrwVolume = Math.round(billedVolume * (kpi.nrwPct / (100 - kpi.nrwPct || 1)))
             const totalProduction = billedVolume + nrwVolume
-            const largestClass = CUSTOMER_CLASS.reduce((a, b) => a.value > b.value ? a : b)
-            const largestPct = ((largestClass.value / billedVolume) * 100).toFixed(0)
+            const largestClass = CUSTOMER_CLASS.reduce((a, b) => a.value > b.value ? a : b, CUSTOMER_CLASS[0])
+            const largestPct = billedVolume > 0 ? ((largestClass.value / billedVolume) * 100).toFixed(0) : "0"
             return (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm relative">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between">
@@ -1431,8 +1479,8 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
                     <p className="text-[10px] text-blue-700 leading-relaxed">
                       <span className="font-bold">Water Balance:</span>{" "}
                       <span className="font-semibold">{totalProduction.toLocaleString()} m³</span> produced →{" "}
-                      <span className="font-semibold">{billedVolume.toLocaleString()} m³</span> billed (72%) +{" "}
-                      <span className="font-semibold text-red-600">{nrwVolume.toLocaleString()} m³</span> lost to NRW (28%).{" "}
+                      <span className="font-semibold">{billedVolume.toLocaleString()} m³</span> billed ({(100 - kpi.nrwPct).toFixed(0)}%) +{" "}
+                      <span className="font-semibold text-red-600">{nrwVolume.toLocaleString()} m³</span> lost to NRW ({kpi.nrwPct.toFixed(0)}%).{" "}
                       {largestClass.name} drives <span className="font-bold">{largestPct}%</span> of billed demand from {largestClass.accounts.toLocaleString()} connections.
                     </p>
                   </div>
@@ -1493,15 +1541,18 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
 
 // ── SCREEN: DESCRIPTIVE ────────────────────────────────────────────────────
 function DescriptiveScreen() {
+  const { customerClasses: CUSTOMER_CLASS, heatmapData: HEATMAP_DATA, heatmapMonths: HEATMAP_MONTHS, topAccounts: TOP_ACCOUNTS } = useDashboard()
   const [activeClass, setActiveClass] = useState("All")
   const classes = ["All", "Residential", "Commercial", "Government", "Semi-Commercial"]
 
+  const totalBilled = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0) || 1
+
   // Class share of total consumption (used to scale heatmap when filtered)
   const CLASS_SHARE: Record<string, number> = {
-    "Residential":     112840 / 139499,
-    "Commercial":      10680  / 139499,
-    "Government":      11200  / 139499,
-    "Semi-Commercial": 4779   / 139499,
+    "Residential":     (CUSTOMER_CLASS.find(c => c.name === "Residential")?.value ?? 112840) / totalBilled,
+    "Commercial":      (CUSTOMER_CLASS.find(c => c.name === "Commercial")?.value ?? 10680)  / totalBilled,
+    "Government":      (CUSTOMER_CLASS.find(c => c.name === "Government")?.value ?? 11200)  / totalBilled,
+    "Semi-Commercial": (CUSTOMER_CLASS.find(c => c.name === "Semi-Commercial")?.value ?? 4779) / totalBilled,
   }
 
   // Customer class bars: dim unselected entries, keep selected ones vivid
@@ -1828,6 +1879,8 @@ function PredictiveScreen() {
 
 // ── SCREEN: SHORTAGE ───────────────────────────────────────────────────────
 function ShortageScreen() {
+  const { supplyDemand, kpi } = useDashboard()
+  const chartSupplyDemand = supplyDemand.length > 0 ? supplyDemand.slice(-18) : SUPPLY_DEMAND
   return (
     <div className="space-y-5">
       <div>
@@ -1885,7 +1938,7 @@ function ShortageScreen() {
           </defs>
         </svg>
         <ResponsiveContainer width="100%" height={320}>
-          <ComposedChart data={SUPPLY_DEMAND} margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
+          <ComposedChart data={chartSupplyDemand} margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
             <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
             <XAxis key="xaxis" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
             <YAxis key="yaxis" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false}
@@ -2290,6 +2343,7 @@ function WeatherScreen() {
 
 // ── SCREEN: NRW MAP ────────────────────────────────────────────────────────
 function NRWScreen() {
+  const { zones: ZONES, kpi } = useDashboard()
   const [hoveredZone, setHoveredZone] = useState<number | null>(null)
   const [selectedNRWZone, setSelectedNRWZone] = useState<number | null>(null)
   const sortedByNRW = [...ZONES].sort((a, b) => b.nrw - a.nrw)
@@ -2300,16 +2354,21 @@ function NRWScreen() {
     return              { bg: "#F0FDF4", border: "#BBF7D0", text: "#16A34A", fill: "#10B981" }
   }
 
+  const zoneIds = ZONES.map(z => z.id)
   const ZONE_GRID = [
-    [1,2,3,4,5], [6,7,8,9,10], [11,12,13,14,15], [16,17,18,19,20]
-  ]
+    zoneIds.slice(0, 5),
+    zoneIds.slice(5, 10),
+    zoneIds.slice(10, 15),
+    zoneIds.slice(15, 20),
+    zoneIds.slice(20, 25),
+  ].filter(r => r.length > 0)
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">NRW Hotspot Map — Non-Revenue Water Analysis</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Tabaco City 20-Zone Grid · Sep 2025 · LWUA Benchmark: ≤20%</p>
+          <p className="text-sm text-slate-500 mt-0.5">Tabaco City {ZONES.length}-Zone Grid · {kpi.latestMonth || "Dec 2025"} · LWUA Benchmark: ≤20%</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
           {[{ label: "Healthy <15%", color: "#10B981" }, { label: "Moderate 15–20%", color: "#F59E0B" }, { label: "Critical >20%", color: "#EF4444" }].map(l => (
@@ -2326,7 +2385,7 @@ function NRWScreen() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 relative">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-800">Zone Choropleth Grid — Tabaco City</h3>
-            <span className="text-[10px] text-slate-400">System avg: 28.0% NRW</span>
+            <span className="text-[10px] text-slate-400">System avg: {kpi.nrwPct.toFixed(1)}% NRW</span>
           </div>
 
           {/* Floating tooltip */}
@@ -2517,13 +2576,14 @@ function NRWScreen() {
 
 // ── SCREEN: ZONES ──────────────────────────────────────────────────────────
 function ZonesScreen() {
+  const { zones: ZONES, kpi } = useDashboard()
   const [selectedZone, setSelectedZone] = useState<typeof ZONES[0] | null>(null)
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-slate-900">Service Zone Analysis</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Granular consumption profiling · 20 service zones · Sep 2025</p>
+        <p className="text-sm text-slate-500 mt-0.5">Granular consumption profiling · {ZONES.length} service zones · {kpi.latestMonth || "Dec 2025"}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -3467,6 +3527,14 @@ function Topbar({ current, onMenuClick, onNavigate }: { current: ScreenId; onMen
 
 // ── MAIN APP ───────────────────────────────────────────────────────────────
 export default function App() {
+  return (
+    <DashboardProvider>
+      <AppContent />
+    </DashboardProvider>
+  )
+}
+
+function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentScreen, setCurrentScreen] = useState<ScreenId>("dashboard")
   const [collapsed, setCollapsed] = useState(false)
