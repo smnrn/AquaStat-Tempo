@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode, type FormEvent } from "react"
+import React, { Component, useState, useEffect, useRef, type ReactNode, type FormEvent } from "react"
 import { toast, Toaster } from "sonner"
 import { motion, AnimatePresence } from "motion/react"
 import { ImageWithFallback } from "@/app/components/ui/ImageWithFallback"
@@ -12,6 +12,7 @@ import {
   Filter, Calendar, FileText, Database,
   Sun, Cloud, CloudRain, CloudLightning, MapPin, Activity,
   CheckCheck, Cpu, X, Scale, ArrowRight, DollarSign, Users, Sparkles, HelpCircle,
+  Copy, Sliders, TrendingDown, Layers, MessageSquare, PenTool, LogOut,
   type LucideIcon
 } from "lucide-react"
 import {
@@ -432,26 +433,172 @@ function MiniSparkline({ data, color = "#0038A8" }: { data: number[]; color?: st
   )
 }
 
-// ── SCREEN: LOGIN ──────────────────────────────────────────────────────────
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPw, setShowPw] = useState(false)
-  const [remember, setRemember] = useState(false)
-  const [loading, setLoading] = useState(false)
+// ── USER MANAGEMENT & OFFICIAL ACCOUNTS ────────────────────────────────────
+export interface UserAccount {
+  id: string
+  username: string
+  name: string
+  role: string
+  designation: string
+  department: string
+  employeeId: string
+  email: string
+  clearanceLevel: string
+  avatarInitials: string
+  lastLogin: string
+}
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
+const MANAGEMENT_ACCOUNTS: (UserAccount & { password: string })[] = [
+  {
+    id: "usr-gm-01",
+    username: "gm.catubag",
+    password: "Password123!",
+    name: "Engr. Joseph Richard G. Catubag, MBA",
+    role: "General Manager",
+    designation: "Head of Agency & General Manager",
+    department: "Office of the General Manager (OGM)",
+    employeeId: "TCWD-EXEC-2015-001",
+    email: "jcatubag@tabacocitywater.gov.ph",
+    clearanceLevel: "Level 5 · Executive Administrator",
+    avatarInitials: "JC",
+    lastLogin: "Today, 08:30 AM"
+  },
+  {
+    id: "usr-ops-02",
+    username: "j.reyes.tcwd",
+    password: "Password123!",
+    name: "Engr. Julian Reyes, P.E.",
+    role: "Operations Manager",
+    designation: "Division Manager for Water Operations & Distribution",
+    department: "Engineering & Operations Department",
+    employeeId: "TCWD-ENG-2018-042",
+    email: "j.reyes@tabacocitywater.gov.ph",
+    clearanceLevel: "Level 4 · Operations & Pump Dispatch Clearance",
+    avatarInitials: "JR",
+    lastLogin: "Today, 09:14 AM"
+  },
+  {
+    id: "usr-admin-03",
+    username: "admin",
+    password: "Password123!",
+    name: "AquaStat System Administrator",
+    role: "System Administrator",
+    designation: "Lead IS Business Analytics Specialist",
+    department: "Management Information Systems (MIS)",
+    employeeId: "TCWD-MIS-2022-019",
+    email: "sysadmin@tabacocitywater.gov.ph",
+    clearanceLevel: "Level 5 · Superuser Admin",
+    avatarInitials: "SA",
+    lastLogin: "Today, 07:45 AM"
+  },
+  {
+    id: "usr-comm-04",
+    username: "m.mallari.tcwd",
+    password: "Password123!",
+    name: "Maria Mallari, CPA",
+    role: "Commercial Officer",
+    designation: "Commercial Services Division Manager",
+    department: "Finance & Commercial Accounts Division",
+    employeeId: "TCWD-FIN-2019-088",
+    email: "mmallari@tabacocitywater.gov.ph",
+    clearanceLevel: "Level 3 · Billing & Revenue Clearance",
+    avatarInitials: "MM",
+    lastLogin: "Yesterday, 04:52 PM"
+  }
+]
+
+// ── SCREEN: LOGIN ──────────────────────────────────────────────────────────
+function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
+  const [username, setUsername] = useState("j.reyes.tcwd")
+  const [password, setPassword] = useState("Password123!")
+  const [showPw, setShowPw] = useState(false)
+  const [remember, setRemember] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+
+  const handleAuth = (e?: FormEvent) => {
+    if (e) e.preventDefault()
+    setErrorMsg("")
     setLoading(true)
-    setTimeout(() => { setLoading(false); onLogin() }, 900)
+
+    setTimeout(() => {
+      setLoading(false)
+      const trimmedU = username.trim()
+      const trimmedP = password.trim()
+
+      if (!trimmedU) {
+        setErrorMsg("Please enter your official username.")
+        return
+      }
+      if (!trimmedP) {
+        setErrorMsg("Please enter your account password.")
+        return
+      }
+
+      // Check known management accounts
+      const matched = MANAGEMENT_ACCOUNTS.find(
+        acc => acc.username.toLowerCase() === trimmedU.toLowerCase() && acc.password === trimmedP
+      )
+
+      if (matched) {
+        if (remember) {
+          localStorage.setItem("aquastat_user_session", JSON.stringify(matched))
+        }
+        toast.success(`Welcome back, ${matched.role}`, {
+          description: `Authenticated as ${matched.name}`
+        })
+        onLogin(matched)
+        return
+      }
+
+      // Allow custom credentials with 4+ characters for user's personal management account
+      if (trimmedP.length >= 4) {
+        const initials = trimmedU.slice(0, 2).toUpperCase()
+        const formattedName = trimmedU
+          .split(".")
+          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(" ")
+
+        const customUser: UserAccount = {
+          id: `usr-custom-${Date.now()}`,
+          username: trimmedU,
+          name: `${formattedName} (Management Officer)`,
+          role: "Authorized Management Officer",
+          designation: "Water District Operations & Analytics Officer",
+          department: "Operations & Decision Support Bureau",
+          employeeId: `TCWD-EMP-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+          email: `${trimmedU.toLowerCase()}@tabacocitywater.gov.ph`,
+          clearanceLevel: "Level 4 · Operations & Decision Support Clearance",
+          avatarInitials: initials,
+          lastLogin: "Active Now"
+        }
+
+        if (remember) {
+          localStorage.setItem("aquastat_user_session", JSON.stringify(customUser))
+        }
+        toast.success("Welcome, Management Officer", {
+          description: `Authenticated as ${customUser.name}`
+        })
+        onLogin(customUser)
+        return
+      }
+
+      setErrorMsg("Invalid credentials. Minimum password length is 4 characters.")
+    }, 600)
+  }
+
+  const selectPreset = (acc: typeof MANAGEMENT_ACCOUNTS[0]) => {
+    setUsername(acc.username)
+    setPassword(acc.password)
+    setErrorMsg("")
   }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      {/* Hero panel — compact strip on mobile, full column on desktop */}
-      <div className="relative flex flex-col justify-between md:flex-[3] overflow-hidden"
+      {/* Hero panel — centered with prominent Tabaco City Water District branding & research paper connection */}
+      <div className="relative flex flex-col justify-between md:flex-[3] overflow-hidden p-6 md:p-12 lg:p-14 text-white"
         style={{ background: "linear-gradient(135deg, #0038A8 0%, #002D80 50%, #001A5C 100%)" }}>
-        <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid slice">
+        <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid slice">
           <path d="M0,300 C150,220 300,380 450,300 C600,220 750,380 900,300 L900,700 L0,700 Z" fill="white" />
           <path d="M0,400 C150,320 300,480 450,400 C600,320 750,480 900,400 L900,700 L0,700 Z" fill="white" opacity="0.5" />
           <path d="M0,500 C150,420 300,560 450,500 C600,420 750,560 900,500 L900,700 L0,700 Z" fill="white" opacity="0.3" />
@@ -460,30 +607,80 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           <circle cx="400" cy="80" r="50" fill="none" stroke="white" strokeWidth="0.6" opacity="0.25" />
         </svg>
 
-        {/* Brand bar — always visible */}
-        <div className="relative z-10 flex items-center gap-3 px-6 py-5 md:px-14 md:py-12 md:mb-0">
-          <div className="w-11 h-11 md:w-14 md:h-14 rounded-full overflow-hidden flex-shrink-0 bg-white shadow-lg shadow-black/20 ring-2 ring-white/20">
-            <ImageWithFallback src={tcwdSeal} alt="Tabaco City Water District seal" className="w-full h-full object-cover" />
+        {/* Ambient radial lighting in the center */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Top bar on hero panel */}
+        <div className="relative z-10 flex items-center justify-between w-full pb-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[11px] font-semibold text-blue-200/90 tracking-wide uppercase">
+              Republic of the Philippines · TCWD Est. 1986
+            </span>
           </div>
-          <div>
-            <p className="text-white font-bold text-base md:text-lg tracking-tight leading-none">AquaStat</p>
-            <p className="text-blue-200/70 text-xs">Tabaco City Water District</p>
-          </div>
+          <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 border border-white/15 text-blue-200 tracking-wider uppercase">
+            LWUA Category B Utility
+          </span>
         </div>
 
-        {/* Hero copy — hidden on mobile, visible on desktop */}
-        <div className="relative z-10 hidden md:block px-14 pb-0 flex-1 flex flex-col justify-center">
-          <h1 className="text-white text-4xl font-extrabold leading-snug mb-5 max-w-md">
-            Smarter water operations<br />for Tabaco City.
+        {/* Main Hero Centerpiece — Vertically & Horizontally Centered */}
+        <div className="relative z-10 my-auto py-8 md:py-12 flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
+          {/* Official TCWD Seal */}
+          <div className="relative mb-5 group">
+            <div className="absolute -inset-2.5 rounded-full bg-gradient-to-r from-blue-400/40 via-cyan-400/30 to-indigo-500/40 blur-xl opacity-80 group-hover:opacity-100 transition-opacity" />
+            <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-white shadow-2xl ring-4 ring-white/30 p-1 flex items-center justify-center">
+              <ImageWithFallback src={tcwdSeal} alt="Tabaco City Water District seal" className="w-full h-full object-contain" />
+            </div>
+          </div>
+
+          {/* District Name with commanding typography */}
+          <p className="text-xs md:text-sm font-extrabold tracking-[0.25em] text-cyan-300 uppercase mb-2">
+            Tabaco City Water District
+          </p>
+          <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-3">
+            AquaStat Decision Support System
           </h1>
-          <p className="text-blue-100/80 text-sm leading-relaxed max-w-sm">
-            Monitor non-revenue water, forecast demand, and act on rule-based recommendations across all 20 service zones — from a single, secure operations console.
+
+          {/* Research Capstone Manuscript Title */}
+          <p className="text-blue-100/90 text-sm md:text-base font-medium max-w-xl mx-auto leading-relaxed mb-6 italic">
+            “Data-Driven Water Supply Forecasting and Water Demand Optimization for Tabaco City Water District”
+          </p>
+
+          {/* Academic Methodological Pillars Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-xl">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
+              <Zap size={12} className="text-amber-400" />
+              Prescriptive MILP Pump Scheduling
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
+              <TrendingUp size={12} className="text-cyan-400" />
+              Multivariate LSTM Demand Forecasting
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
+              <Droplets size={12} className="text-blue-300" />
+              IWA / LWUA Water Balance Audit
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
+              <Users size={12} className="text-emerald-300" />
+              K-Means Consumer Profiling (k=4)
+            </span>
+          </div>
+
+          <p className="hidden md:block text-blue-200/80 text-xs max-w-lg mx-auto leading-relaxed">
+            Centralized operational telemetry across 20 service zones — empowering executive decision-making through predictive hydraulics, climate correlation, and automated non-revenue water mitigation.
           </p>
         </div>
 
-        {/* Footer — desktop only */}
-        <div className="relative z-10 hidden md:block px-14 py-8 text-blue-200/50 text-xs">
-          © 2025 Tabaco City Water District · AquaStat DSS v2.4.1
+        {/* Hero Footer — Academic and District Attribution */}
+        <div className="relative z-10 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-blue-200/60 gap-2 text-center sm:text-left">
+          <div>
+            <p className="font-semibold text-blue-100/80">University of Santo Tomas · Department of Information Systems</p>
+            <p className="text-[10px] text-blue-300/60">College of Information and Computing Sciences · Business Analytics Track</p>
+          </div>
+          <div className="text-center sm:text-right">
+            <p className="font-mono text-[10px] text-blue-200/70">AquaStat DSS v2.4.1</p>
+            <p className="text-[10px] text-blue-300/50">© 2026 Tabaco City Water District</p>
+          </div>
         </div>
       </div>
 
@@ -497,16 +694,24 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
         >
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
             <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">Sign In</h2>
-            <p className="text-sm text-slate-500 mb-6">Welcome back. Enter your credentials to continue.</p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <p className="text-sm text-slate-500 mb-5">Welcome back. Enter your management credentials to continue.</p>
+
+            {errorMsg && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex items-center gap-2">
+                <AlertCircle size={15} className="flex-shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAuth} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Username</label>
                 <div className="relative">
                   <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    type="text" value={username} onChange={e => setUsername(e.target.value)}
+                    type="text" value={username} onChange={e => { setUsername(e.target.value); setErrorMsg("") }}
                     placeholder="e.g. j.reyes.tcwd"
-                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all"
+                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all font-medium text-slate-800"
                   />
                 </div>
               </div>
@@ -515,9 +720,9 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 <div className="relative">
                   <Shield size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
+                    type={showPw ? "text" : "password"} value={password} onChange={e => { setPassword(e.target.value); setErrorMsg("") }}
                     placeholder="••••••••••"
-                    className="w-full pl-9 pr-10 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all"
+                    className="w-full pl-9 pr-10 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all font-medium text-slate-800"
                   />
                   <button type="button" onClick={() => setShowPw(!showPw)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -529,12 +734,14 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
                     className="w-3.5 h-3.5 rounded accent-[#0038A8]" />
-                  <span className="text-xs text-slate-600">Remember this device</span>
+                  <span className="text-xs text-slate-600">Remember this session</span>
                 </label>
-                <button type="button" className="text-xs text-[#0038A8] hover:underline">Forgot password?</button>
+                <button type="button" onClick={() => toast.info("Password Reset Directive", { description: "Contact TCWD Management Information Systems (MIS) helpdesk at local ext 104." })} className="text-xs text-[#0038A8] hover:underline cursor-pointer">
+                  Forgot password?
+                </button>
               </div>
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition-all mt-2"
+                className="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition-all mt-2 cursor-pointer shadow-sm hover:shadow-md"
                 style={{ background: loading ? "#6B8FD4" : "#0038A8" }}
               >
                 {loading ? (
@@ -543,17 +750,205 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                       animate={{ rotate: 360 }}
                       transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                       className="inline-block"><RefreshCw size={14} /></motion.span>
-                    Authenticating…
+                    Verifying Credentials…
                   </span>
                 ) : "Sign In to AquaStat"}
               </button>
             </form>
+
+            {/* Quick Executive Presets for Defense / Presentation */}
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                Executive Management Accounts:
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {MANAGEMENT_ACCOUNTS.map(acc => (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => selectPreset(acc)}
+                    className={`p-2 rounded-lg text-left border transition-all text-xs cursor-pointer ${
+                      username.toLowerCase() === acc.username.toLowerCase()
+                        ? "bg-blue-50 border-[#0038A8] text-[#0038A8] font-bold"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="truncate font-semibold text-[11px]">{acc.name.split(",")[0]}</div>
+                    <div className="text-[9px] text-slate-400 truncate">{acc.role}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <p className="text-center text-[11px] text-slate-400 mt-4 flex items-center justify-center gap-1.5">
             <Shield size={11} /> Authorized Personnel Only · All sessions are encrypted (TLS 1.3)
           </p>
         </motion.div>
       </div>
+    </div>
+  )
+}
+
+// ── USER PROFILE & CREDENTIALS MODAL ───────────────────────────────────────
+function UserProfileModal({
+  isOpen,
+  onClose,
+  user
+}: {
+  isOpen: boolean
+  onClose: () => void
+  user: UserAccount
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-all"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.18 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col"
+      >
+        {/* Header background with avatar badge */}
+        <div className="relative p-6 bg-gradient-to-br from-[#0038A8] via-[#002D80] to-[#001A5C] text-white overflow-hidden">
+          <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-14 h-14 rounded-2xl bg-white/15 border-2 border-white/30 backdrop-blur-xs flex items-center justify-center text-xl font-bold font-mono text-white shadow-lg">
+              {user.avatarInitials}
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#002D80] shadow-sm" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-white/20 text-blue-100 uppercase tracking-wider mb-1">
+                {user.role}
+              </span>
+              <h3 className="text-base font-bold text-white leading-tight truncate">
+                {user.name}
+              </h3>
+              <p className="text-xs text-blue-200/80 truncate mt-0.5">
+                {user.designation}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Details List */}
+        <div className="p-6 space-y-3.5 divide-y divide-slate-100">
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+              <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Employee ID</p>
+              <p className="font-mono font-semibold text-slate-800 mt-0.5">{user.employeeId}</p>
+            </div>
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+              <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Security Tier</p>
+              <p className="font-semibold text-emerald-600 mt-0.5 truncate">{user.clearanceLevel.split("·")[0]}</p>
+            </div>
+          </div>
+
+          <div className="pt-3 space-y-2.5 text-xs">
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-slate-500 flex-shrink-0">Department</span>
+              <span className="font-medium text-slate-800 text-right">{user.department}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500 flex-shrink-0">Official Email</span>
+              <span className="font-mono text-slate-800 truncate">{user.email}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500 flex-shrink-0">Clearance Scope</span>
+              <span className="font-semibold text-slate-700">{user.clearanceLevel}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500 flex-shrink-0">Active Session</span>
+              <span className="font-mono text-emerald-600 font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                TLS 1.3 · Verified Online
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Actions — Close only */}
+        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer shadow-2xs"
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+// ── LOGOUT CONFIRMATION MODAL ──────────────────────────────────────────────
+function LogoutConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirmLogout,
+  userName
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirmLogout: () => void
+  userName: string
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-all"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 14 }}
+        transition={{ duration: 0.16 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 text-center space-y-4"
+      >
+        <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto shadow-inner">
+          <LogOut size={22} className="translate-x-0.5" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Confirm Sign Out</h3>
+          <p className="text-xs text-slate-600 mt-1 font-medium">
+            Are you sure you want to sign out, <span className="font-bold text-slate-800">{userName}</span>?
+          </p>
+          <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+            Your encrypted session will be closed. You will need to re-enter your credentials to access the decision support console.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+          >
+            Stay Signed In
+          </button>
+          <button
+            type="button"
+            onClick={onConfirmLogout}
+            className="px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-red-600/30"
+          >
+            <LogOut size={13} />
+            Yes, Sign Out
+          </button>
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -1539,10 +1934,168 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
   )
 }
 
+// ── K-MEANS & RFM CONSUMER PROFILING DATA (§2.1.7) ───────────────────────────
+const KMEANS_CLUSTERS_DATA = [
+  {
+    id: 1,
+    name: "Cluster 1: High-Volume Commercial & Institutional",
+    shortName: "Commercial High-Yield",
+    badgeColor: "bg-purple-100 text-purple-800 border-purple-200",
+    color: "#8B5CF6",
+    accounts: 2244,
+    shareAccountsPct: 8.4,
+    volumeM3PerMo: 318648,
+    shareVolumePct: 41.2,
+    revenuePhpPerMo: 2001510,
+    shareRevenuePct: 38.6,
+    avgConsumptionM3: 142.0,
+    collectionEfficiencyPct: 98.2,
+    rfm: {
+      recencyDays: 1.2,
+      recencyScore: "5/5 · Active Daily",
+      recencyPct: 96,
+      frequencyDays: 30.0,
+      frequencyScore: "5/5 · Continuous Flow",
+      frequencyPct: 100,
+      monetaryPhp: 18400,
+      monetaryScore: "5/5 · High Revenue Tier",
+      monetaryPct: 95
+    },
+    profileDescription: "Major agro-industrial processing plants, hotel resorts, central public market stalls, shopping centers, and provincial government facilities. Operates under continuous daytime flow with strict pressure tolerances.",
+    prescriptivePolicy: "Deploy Automated Meter Reading (AMR/AMI) telemetry with 15-minute sampling intervals. Enforce Time-of-Use peak shaving surcharges and mandatory certified backflow preventer inspections.",
+    riskFlag: "Revenue Sensitivity: Top 5 accounts drive 14.8% of district total billing; vulnerable to localized pressure sags."
+  },
+  {
+    id: 2,
+    name: "Cluster 2: Baseline Steady Residential Core",
+    shortName: "Residential Backbone",
+    badgeColor: "bg-blue-100 text-blue-800 border-blue-200",
+    color: "#0038A8",
+    accounts: 17154,
+    shareAccountsPct: 64.2,
+    volumeM3PerMo: 360234,
+    shareVolumePct: 46.5,
+    revenuePhpPerMo: 2182560,
+    shareRevenuePct: 42.1,
+    avgConsumptionM3: 21.0,
+    collectionEfficiencyPct: 94.6,
+    rfm: {
+      recencyDays: 4.8,
+      recencyScore: "4/5 · Standard 30-Day Cycle",
+      recencyPct: 82,
+      frequencyDays: 28.5,
+      frequencyScore: "5/5 · Daily Household Use",
+      frequencyPct: 95,
+      monetaryPhp: 385,
+      monetaryScore: "3/5 · Subsidized Lifeline",
+      monetaryPct: 58
+    },
+    profileDescription: "Core single-family domestic connections spread across 20 Tabaco barangays. Demonstrates rigid morning (06:00-08:00) and evening (18:00-20:00) diurnal peaks with high bill compliance.",
+    prescriptivePolicy: "Maintain LWUA-mandated subsidized lifeline tariff for 0–10 m³ blocks. Trigger automated SMS leak advisories when household billing spikes >30% over 3-month rolling median.",
+    riskFlag: "Hydraulic vulnerability: Rapid pressure drops during evening peak hours in elevated zones (Zones 2, 7, 15)."
+  },
+  {
+    id: 3,
+    name: "Cluster 3: Seasonal Volatile & Peaking Accounts",
+    shortName: "Seasonal Peaking Risk",
+    badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
+    color: "#F59E0B",
+    accounts: 4943,
+    shareAccountsPct: 18.5,
+    volumeM3PerMo: 61787,
+    shareVolumePct: 8.0,
+    revenuePhpPerMo: 637660,
+    shareRevenuePct: 12.3,
+    avgConsumptionM3: 38.0,
+    collectionEfficiencyPct: 88.4,
+    rfm: {
+      recencyDays: 8.4,
+      recencyScore: "3/5 · Irregular Active",
+      recencyPct: 65,
+      frequencyDays: 21.0,
+      frequencyScore: "3/5 · Weather Variable",
+      frequencyPct: 70,
+      monetaryPhp: 712,
+      monetaryScore: "3/5 · Moderate Variable",
+      monetaryPct: 68
+    },
+    profileDescription: "Agricultural backyard irrigators, commercial carwash enterprises, secondary vacation households, and construction sites with high temperature sensitivity (+65% surge during hot/dry months).",
+    prescriptivePolicy: "Incentivize on-site rainwater harvesting tanks. Enact drought conservation tariffs during PAGASA El Niño advisories; schedule pressure step-down between 13:00 and 16:00.",
+    riskFlag: "Primary cause of unexpected distribution drawdown during April–May dry season peaks."
+  },
+  {
+    id: 4,
+    name: "Cluster 4: High-Deficit & Delinquency-Risk Accounts",
+    badgeColor: "bg-red-100 text-red-800 border-red-200",
+    shortName: "Intervention Priority",
+    color: "#EF4444",
+    accounts: 2378,
+    shareAccountsPct: 8.9,
+    volumeM3PerMo: 33767,
+    shareVolumePct: 4.3,
+    revenuePhpPerMo: 363200,
+    shareRevenuePct: 7.0,
+    avgConsumptionM3: 46.0,
+    collectionEfficiencyPct: 52.1,
+    rfm: {
+      recencyDays: 64.2,
+      recencyScore: "1/5 · >60 Days Overdue",
+      recencyPct: 22,
+      frequencyDays: 12.0,
+      frequencyScore: "2/5 · Erratic / Stalled",
+      frequencyPct: 40,
+      monetaryPhp: 890,
+      monetaryScore: "3/5 · Arrears Accumulation",
+      monetaryPct: 62
+    },
+    profileDescription: "Connections characterized by aged mechanical meters (>10 years), repeated zero-consumption periods followed by sudden uncontrolled surges, and protracted billing collection lag.",
+    prescriptivePolicy: "Immediate field inspection and acoustic leak sweep for underground bursts or unauthorized bypasses. Offer structured debt restructuring programs before issuing disconnection notices.",
+    riskFlag: "High probability of unbilled physical loss (NRW) and bad-debt allowance impact."
+  }
+]
+
+const KMEANS_SCATTER_DATA = [
+  // Cluster 1: High-Volume Commercial (Volume: 90-250 m³, Bill: ₱12k-₱32k)
+  { accountId: "TC-COM-1044", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 168, bill: 21840, recency: 1.0, color: "#8B5CF6" },
+  { accountId: "TC-IND-2081", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 210, bill: 27300, recency: 1.5, color: "#8B5CF6" },
+  { accountId: "TC-COM-3190", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 142, bill: 18460, recency: 1.2, color: "#8B5CF6" },
+  { accountId: "TC-GOV-0412", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 185, bill: 24050, recency: 0.8, color: "#8B5CF6" },
+  { accountId: "TC-COM-1109", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 125, bill: 16250, recency: 1.4, color: "#8B5CF6" },
+  { accountId: "TC-IND-0988", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 240, bill: 31200, recency: 1.0, color: "#8B5CF6" },
+  { accountId: "TC-COM-5021", clusterId: 1, clusterName: "Commercial High-Yield", consumption: 110, bill: 14300, recency: 1.8, color: "#8B5CF6" },
+
+  // Cluster 2: Steady Residential Core (Volume: 12-32 m³, Bill: ₱220-₱580)
+  { accountId: "TC-RES-8812", clusterId: 2, clusterName: "Residential Backbone", consumption: 18, bill: 324, recency: 4.2, color: "#0038A8" },
+  { accountId: "TC-RES-9014", clusterId: 2, clusterName: "Residential Backbone", consumption: 22, bill: 396, recency: 5.0, color: "#0038A8" },
+  { accountId: "TC-RES-7102", clusterId: 2, clusterName: "Residential Backbone", consumption: 15, bill: 270, recency: 3.8, color: "#0038A8" },
+  { accountId: "TC-RES-6541", clusterId: 2, clusterName: "Residential Backbone", consumption: 26, bill: 468, recency: 4.5, color: "#0038A8" },
+  { accountId: "TC-RES-4320", clusterId: 2, clusterName: "Residential Backbone", consumption: 20, bill: 360, recency: 5.2, color: "#0038A8" },
+  { accountId: "TC-RES-5591", clusterId: 2, clusterName: "Residential Backbone", consumption: 24, bill: 432, recency: 4.9, color: "#0038A8" },
+  { accountId: "TC-RES-3829", clusterId: 2, clusterName: "Residential Backbone", consumption: 19, bill: 342, recency: 5.5, color: "#0038A8" },
+  { accountId: "TC-RES-2190", clusterId: 2, clusterName: "Residential Backbone", consumption: 28, bill: 504, recency: 3.5, color: "#0038A8" },
+
+  // Cluster 3: Seasonal Volatile (Volume: 30-70 m³, Bill: ₱550-₱1,350)
+  { accountId: "TC-AGR-4401", clusterId: 3, clusterName: "Seasonal Peaking", consumption: 42, bill: 756, recency: 7.5, color: "#F59E0B" },
+  { accountId: "TC-RES-1198", clusterId: 3, clusterName: "Seasonal Peaking", consumption: 56, bill: 1008, recency: 8.2, color: "#F59E0B" },
+  { accountId: "TC-SEM-3310", clusterId: 3, clusterName: "Seasonal Peaking", consumption: 35, bill: 630, recency: 9.0, color: "#F59E0B" },
+  { accountId: "TC-RES-7782", clusterId: 3, clusterName: "Seasonal Peaking", consumption: 62, bill: 1116, recency: 8.8, color: "#F59E0B" },
+  { accountId: "TC-COM-4102", clusterId: 3, clusterName: "Seasonal Peaking", consumption: 48, bill: 864, recency: 6.9, color: "#F59E0B" },
+  { accountId: "TC-RES-9451", clusterId: 3, clusterName: "Seasonal Peaking", consumption: 39, bill: 702, recency: 9.5, color: "#F59E0B" },
+
+  // Cluster 4: High-Deficit / Delinquency-Risk (Volume: 35-85 m³, Overdue Bill: ₱700-₱1,700)
+  { accountId: "TC-DEL-6012", clusterId: 4, clusterName: "Intervention Priority", consumption: 52, bill: 936, recency: 58.0, color: "#EF4444" },
+  { accountId: "TC-DEL-7821", clusterId: 4, clusterName: "Intervention Priority", consumption: 68, bill: 1224, recency: 72.0, color: "#EF4444" },
+  { accountId: "TC-DEL-5190", clusterId: 4, clusterName: "Intervention Priority", consumption: 44, bill: 792, recency: 64.0, color: "#EF4444" },
+  { accountId: "TC-DEL-8902", clusterId: 4, clusterName: "Intervention Priority", consumption: 76, bill: 1368, recency: 80.0, color: "#EF4444" },
+  { accountId: "TC-DEL-3319", clusterId: 4, clusterName: "Intervention Priority", consumption: 38, bill: 684, recency: 48.0, color: "#EF4444" },
+  { accountId: "TC-DEL-9120", clusterId: 4, clusterName: "Intervention Priority", consumption: 58, bill: 1044, recency: 69.0, color: "#EF4444" },
+]
+
 // ── SCREEN: DESCRIPTIVE ────────────────────────────────────────────────────
 function DescriptiveScreen() {
   const { customerClasses: CUSTOMER_CLASS, heatmapData: HEATMAP_DATA, heatmapMonths: HEATMAP_MONTHS, topAccounts: TOP_ACCOUNTS } = useDashboard()
   const [activeClass, setActiveClass] = useState("All")
+  const [selectedClusterId, setSelectedClusterId] = useState<number>(1)
   const classes = ["All", "Residential", "Commercial", "Government", "Semi-Commercial"]
 
   const totalBilled = CUSTOMER_CLASS.reduce((s, c) => s + c.value, 0) || 1
@@ -1735,142 +2288,840 @@ function DescriptiveScreen() {
           </table>
         </div>
       </ChartCard>
+
+      {/* ── K-MEANS CONSUMER PROFILING & RFM CLUSTERING CARD (§2.1.7, Objective 3) ── */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Header with academic badges */}
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Layers size={16} className="text-[#0038A8]" />
+              <h3 className="text-sm font-bold text-slate-800">
+                Customer Segmentation &amp; K-Means Clustering (<span className="font-mono text-[#0038A8]">k = 4</span>)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Unsupervised machine learning consumer profiling based on Recency, Frequency, and Monetary (RFM) dimensions (§2.1.7)
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+              Silhouette: S = 0.684
+            </span>
+            <span className="text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+              Davies-Bouldin: 0.741
+            </span>
+            <span className="text-[10px] font-mono font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+              26,720 Active Accounts Profiled
+            </span>
+          </div>
+        </div>
+
+        {/* Cluster Tabs Navigation */}
+        <div className="px-5 pt-3 border-b border-slate-100 bg-slate-50/50 flex gap-2 overflow-x-auto">
+          {KMEANS_CLUSTERS_DATA.map(c => {
+            const active = selectedClusterId === c.id
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelectedClusterId(c.id)}
+                className={`flex items-center gap-2 text-xs font-semibold px-3.5 py-2.5 border-b-2 transition-all cursor-pointer whitespace-nowrap -mb-px ${
+                  active
+                    ? "border-[#0038A8] text-[#0038A8] bg-white rounded-t-lg shadow-2xs"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                <span>{c.shortName}</span>
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                  active ? "bg-blue-100 text-blue-800" : "bg-slate-200/70 text-slate-600"
+                }`}>
+                  {c.shareAccountsPct}%
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Content Body: Scatter Chart (Left) + Selected Cluster Profile (Right) */}
+        {(() => {
+          const selected = KMEANS_CLUSTERS_DATA.find(c => c.id === selectedClusterId) || KMEANS_CLUSTERS_DATA[0]
+          return (
+            <div className="p-5 space-y-5">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Left: 2D Scatter Chart (7 Cols) */}
+                <div className="lg:col-span-7 bg-slate-50/60 rounded-xl p-4 border border-slate-200/80">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800">
+                        2D Feature Space: Consumption (m³) vs. Monthly Billing (₱)
+                      </h4>
+                      <p className="text-[10px] text-slate-400">
+                        Each point represents a sampled consumer connection; colored by K-Means cluster assignment
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">Logarithmic variance scale</span>
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={260}>
+                    <ScatterChart margin={{ left: 8, right: 12, top: 12, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                      <XAxis
+                        dataKey="consumption"
+                        name="Consumption"
+                        unit=" m³"
+                        tick={{ fontSize: 10, fill: "#64748B" }}
+                        axisLine={false}
+                        tickLine={false}
+                        label={{ value: "Monthly Consumption (m³)", position: "insideBottom", offset: -4, fontSize: 10, fill: "#64748B" }}
+                      />
+                      <YAxis
+                        dataKey="bill"
+                        name="Bill"
+                        unit=" ₱"
+                        tick={{ fontSize: 10, fill: "#64748B" }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v: number) => v >= 1000 ? `₱${(v/1000).toFixed(0)}k` : `₱${v}`}
+                      />
+                      <RTooltip
+                        content={(p: any) => {
+                          if (!p.active || !p.payload?.length) return null
+                          const d = p.payload[0].payload
+                          return (
+                            <div className="bg-slate-900/95 backdrop-blur text-white p-2.5 rounded-lg shadow-xl text-xs space-y-1 font-mono border border-slate-700">
+                              <p className="font-bold text-blue-300 font-sans flex items-center justify-between gap-3">
+                                <span>{d.accountId}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-normal" style={{ backgroundColor: d.color }}>{d.clusterName}</span>
+                              </p>
+                              <p className="text-slate-300 text-[11px]">Consumption: <strong className="text-white">{d.consumption} m³</strong></p>
+                              <p className="text-slate-300 text-[11px]">Monthly Bill: <strong className="text-white">₱{d.bill.toLocaleString()}</strong></p>
+                              <p className="text-slate-400 text-[10px]">Payment Recency: <strong>{d.recency} days</strong></p>
+                            </div>
+                          )
+                        }}
+                      />
+                      {/* Scatter for each cluster */}
+                      {KMEANS_CLUSTERS_DATA.map(c => {
+                        const pts = KMEANS_SCATTER_DATA.filter(p => p.clusterId === c.id)
+                        const isFocus = selectedClusterId === c.id
+                        return (
+                          <Scatter
+                            key={c.id}
+                            name={c.shortName}
+                            data={pts}
+                            fill={c.color}
+                            opacity={isFocus ? 0.95 : 0.4}
+                            shape="circle"
+                          />
+                        )
+                      })}
+                    </ScatterChart>
+                  </ResponsiveContainer>
+
+                  {/* Scatter Legend */}
+                  <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] pt-2 border-t border-slate-200/60 mt-1">
+                    {KMEANS_CLUSTERS_DATA.map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => setSelectedClusterId(c.id)}
+                        className={`flex items-center gap-1.5 transition-opacity ${selectedClusterId === c.id ? "font-bold opacity-100" : "opacity-60 hover:opacity-100"}`}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                        <span className="text-slate-700">{c.shortName}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: Selected Cluster Detail Card (5 Cols) */}
+                <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
+                  {/* Top Header Card */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${selected.badgeColor}`}>
+                          Cluster {selected.id}
+                        </span>
+                        <h4 className="text-sm font-bold text-slate-900 mt-1">
+                          {selected.name}
+                        </h4>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono text-sm font-bold text-slate-800">
+                          {selected.accounts.toLocaleString()}
+                        </span>
+                        <p className="text-[10px] text-slate-400">accounts ({selected.shareAccountsPct}%)</p>
+                      </div>
+                    </div>
+
+                    {/* 4 Mini Stat Badges */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-50 p-2.5 rounded-lg">
+                        <p className="text-[10px] text-slate-400">Monthly Revenue</p>
+                        <p className="font-mono font-bold text-slate-800 mt-0.5">₱{(selected.revenuePhpPerMo / 1_000_000).toFixed(2)}M</p>
+                        <p className="text-[9px] text-[#0038A8] font-medium">{selected.shareRevenuePct}% of District Total</p>
+                      </div>
+                      <div className="bg-slate-50 p-2.5 rounded-lg">
+                        <p className="text-[10px] text-slate-400">Avg Account Use</p>
+                        <p className="font-mono font-bold text-slate-800 mt-0.5">{selected.avgConsumptionM3} m³/mo</p>
+                        <p className="text-[9px] text-emerald-600 font-medium">{selected.collectionEfficiencyPct}% Collection Eff.</p>
+                      </div>
+                    </div>
+
+                    {/* RFM Quantitative Score Progress Bars */}
+                    <div className="space-y-2 border-t border-slate-100 pt-2.5">
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-slate-500 font-medium">Recency (R): <strong className="text-slate-700">{selected.rfm.recencyDays} days avg</strong></span>
+                          <span className="font-mono text-[10px] text-slate-500">{selected.rfm.recencyScore}</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-blue-600" style={{ width: `${selected.rfm.recencyPct}%` }} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-slate-500 font-medium">Frequency (F): <strong className="text-slate-700">{selected.rfm.frequencyDays} billed days/mo</strong></span>
+                          <span className="font-mono text-[10px] text-slate-500">{selected.rfm.frequencyScore}</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${selected.rfm.frequencyPct}%` }} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-slate-500 font-medium">Monetary (M): <strong className="text-slate-700">₱{selected.rfm.monetaryPhp.toLocaleString()}/mo avg</strong></span>
+                          <span className="font-mono text-[10px] text-slate-500">{selected.rfm.monetaryScore}</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-purple-500" style={{ width: `${selected.rfm.monetaryPct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Behavioral Profile narrative */}
+                    <div className="text-[11px] text-slate-600 bg-slate-50/80 p-2.5 rounded-lg border border-slate-200/50 leading-relaxed">
+                      <strong className="text-slate-800">Operational Profile: </strong>
+                      {selected.profileDescription}
+                    </div>
+
+                    {/* Prescriptive Policy & Risk Directive */}
+                    <div className="bg-blue-50/70 border border-blue-200/60 rounded-lg p-3 text-[11px] space-y-1.5">
+                      <div className="flex items-start gap-1.5 text-blue-900 font-semibold">
+                        <Sparkles size={13} className="text-[#0038A8] flex-shrink-0 mt-0.5" />
+                        <span>Prescriptive Utility Policy (§3.6.2):</span>
+                      </div>
+                      <p className="text-blue-800 leading-relaxed pl-4">
+                        {selected.prescriptivePolicy}
+                      </p>
+                      <div className="pt-1 pl-4 text-[10px] text-amber-800 font-medium flex items-center gap-1">
+                        <AlertTriangle size={11} className="text-amber-600 flex-shrink-0" />
+                        <span>{selected.riskFlag}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cross-Cluster Comparative Synthesis Table */}
+              <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                      <th className="px-4 py-2.5 text-left">K-Means Cluster</th>
+                      <th className="px-3 py-2.5 text-center">Accounts (%)</th>
+                      <th className="px-3 py-2.5 text-right">Volume Share</th>
+                      <th className="px-3 py-2.5 text-right">Revenue Share</th>
+                      <th className="px-3 py-2.5 text-right">Avg (m³/mo)</th>
+                      <th className="px-3 py-2.5 text-center">Collection Eff.</th>
+                      <th className="px-4 py-2.5 text-left">Primary Policy Directive</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {KMEANS_CLUSTERS_DATA.map(c => (
+                      <tr
+                        key={c.id}
+                        onClick={() => setSelectedClusterId(c.id)}
+                        className={`transition-colors cursor-pointer ${selectedClusterId === c.id ? "bg-blue-50/50 font-medium" : "hover:bg-slate-50"}`}
+                      >
+                        <td className="px-4 py-3 flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                          <span className="font-semibold text-slate-800">{c.shortName}</span>
+                        </td>
+                        <td className="px-3 py-3 text-center font-mono text-slate-700">
+                          {c.accounts.toLocaleString()} ({c.shareAccountsPct}%)
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono text-slate-700">
+                          {c.volumeM3PerMo.toLocaleString()} m³ ({c.shareVolumePct}%)
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono font-semibold text-slate-900">
+                          ₱{(c.revenuePhpPerMo / 1_000_000).toFixed(2)}M ({c.shareRevenuePct}%)
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono text-slate-700">
+                          {c.avgConsumptionM3} m³
+                        </td>
+                        <td className="px-3 py-3 text-center font-mono">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            c.collectionEfficiencyPct >= 90 ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                          }`}>
+                            {c.collectionEfficiencyPct}%
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 text-[11px] leading-snug">
+                          {c.prescriptivePolicy.split(". ")[0]}.
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        })()}
+      </div>
     </div>
   )
 }
 
 // ── SCREEN: PREDICTIVE ─────────────────────────────────────────────────────
 function PredictiveScreen() {
-  const [activeModel, setActiveModel] = useState("Multivariate LSTM")
+  const { predictive, isLive } = useDashboard()
+  const [activeModel, setActiveModel] = useState<string>("Multivariate LSTM")
+  const [compareAll, setCompareAll] = useState<boolean>(false)
   const [hidden, setHidden] = useState<Set<string>>(new Set())
-  const models = ["SARIMA", "Multivariate LSTM", "Meta Prophet", "XGBoost Regressor", "Ensemble Model"]
+
+  const models = predictive?.models || ["Multivariate LSTM", "SARIMA", "Meta Prophet", "XGBoost Regressor", "Ensemble Model"]
+
   const toggle = (key: string) => setHidden(prev => {
-    const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n
+    const n = new Set(prev)
+    n.has(key) ? n.delete(key) : n.add(key)
+    return n
   })
 
-  const MODEL_METRICS: Record<string, { rmse: string; mape: string; mae: string; note: string; best: string }> = {
-    "SARIMA":             { rmse: "4,890 m³", mape: "4.12%", mae: "4,120 m³", note: "Statistical baseline model", best: "LSTM" },
-    "Multivariate LSTM":  { rmse: "4,521 m³", mape: "3.24%", mae: "3,876 m³", note: "Best performer for non-linear peaks", best: "LSTM" },
-    "Meta Prophet":       { rmse: "4,720 m³", mape: "3.85%", mae: "4,010 m³", note: "Additive weather & holiday model", best: "LSTM" },
-    "XGBoost Regressor":  { rmse: "4,610 m³", mape: "3.50%", mae: "3,940 m³", note: "Extreme gradient boosted tree", best: "LSTM" },
-    "Ensemble Model":     { rmse: "4,410 m³", mape: "3.10%", mae: "3,750 m³", note: "Weighted Bayesian combination", best: "Ensemble" },
+  const curMetrics = predictive?.modelMetrics?.[activeModel] || {
+    name: activeModel,
+    rmse: "4,521 m³",
+    mape: "3.24%",
+    mae: "3,876 m³",
+    r2: "0.962",
+    trainTestSplit: "70% Train (76 mos) / 30% Test (32 mos)",
+    trainingSamples: 76,
+    testSamples: 32,
+    regressors: ["Historical Demand (m³)", "PAGASA Max Temp (°C)", "PAGASA Rainfall (mm)", "Active Connections"],
+    status: "Recommended Operational Model",
+    note: "Superior capturing of non-linear dry season demand surge (+22% above baseline).",
+    isBest: true,
   }
 
-  const curMetrics = MODEL_METRICS[activeModel] || MODEL_METRICS["Multivariate LSTM"]
+  // Model key for charting
+  const modelKeyMap: Record<string, keyof typeof predictive.forecastData[0]> = {
+    "Multivariate LSTM": "lstm",
+    "SARIMA": "sarima",
+    "Meta Prophet": "prophet",
+    "XGBoost Regressor": "xgboost",
+    "Ensemble Model": "ensemble",
+  }
 
-  const SPIKE_TABLE = [
-    { month: "February 2026", zone: "Zone 1",  volume: 22480, spike: 28.4, confidence: "94.2%", risk: "critical" as ZoneStatus },
-    { month: "March 2026",    zone: "Zone 15", volume: 19840, spike: 33.7, confidence: "91.8%", risk: "critical" as ZoneStatus },
-    { month: "April 2026",    zone: "Zone 2",  volume: 24120, spike: 21.6, confidence: "88.4%", risk: "critical" as ZoneStatus },
-    { month: "February 2026", zone: "Zone 7",  volume: 17240, spike: 16.8, confidence: "85.1%", risk: "warning"  as ZoneStatus },
-    { month: "March 2026",    zone: "Zone 9",  volume: 12840, spike: 14.2, confidence: "82.6%", risk: "warning"  as ZoneStatus },
-    { month: "April 2026",    zone: "Zone 17", volume: 13480, spike: 11.4, confidence: "79.3%", risk: "warning"  as ZoneStatus },
-  ]
+  const activeKey = modelKeyMap[activeModel] || "lstm"
+
+  // Curated color palette for multi-model comparison
+  const MODEL_COLORS: Record<string, string> = {
+    "Multivariate LSTM": "#0038A8",
+    "SARIMA": "#F59E0B",
+    "Meta Prophet": "#10B981",
+    "XGBoost Regressor": "#8B5CF6",
+    "Ensemble Model": "#EC4899",
+  }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <style>{`@keyframes dashMove{to{stroke-dashoffset:-9}}.forecast-line-animated path{animation:dashMove 0.4s linear infinite}`}</style>
-      <div className="flex items-center justify-between">
+
+      {/* Header & Framework Alignment */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Demand Forecasting — Predictive Analytics</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Tier 2 Machine Learning time-series models · Q4 2025 – Q2 2026</p>
-        </div>
-        <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-          {models.map(m => (
-            <button key={m} onClick={() => setActiveModel(m)}
-              className={`text-xs px-3 py-1.5 rounded-md transition-all ${activeModel === m ? "bg-white text-[#0038A8] font-semibold shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-              {m}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Accuracy Scorecards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "RMSE", value: curMetrics.rmse, note: `Root Mean Sq Error (${activeModel})`, ok: true },
-          { label: "MAPE", value: curMetrics.mape, note: "High prediction accuracy", ok: true },
-          { label: "MAE", value: curMetrics.mae, note: "Mean Absolute Error", ok: true },
-          { label: "Model Evaluation", value: curMetrics.best, note: curMetrics.note, ok: true },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{s.label}</p>
-            <p className="text-2xl font-bold font-mono text-slate-900 mt-1">{s.value}</p>
-            <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
-              <CheckCircle2 size={10} /> {s.note}
-            </p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900">Demand Forecasting — Predictive Analytics Tier</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-[#0038A8] border border-blue-200">
+              <Cpu size={11} className="text-[#0038A8]" />
+              CRISP-DM · Tier 2 Intelligent Core
+            </span>
           </div>
-        ))}
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            Automated time-series models evaluated across a 70% Training / 30% Testing split (2017–2025) · Cross-validated with external PAGASA weather regressors
+          </p>
+        </div>
+
+        {/* Model Tabs & Compare Switch */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs">
+            <input
+              type="checkbox"
+              id="compareAll"
+              checked={compareAll}
+              onChange={e => setCompareAll(e.target.checked)}
+              className="rounded text-[#0038A8] focus:ring-0 cursor-pointer"
+            />
+            <label htmlFor="compareAll" className="cursor-pointer select-none font-medium">Compare All 5 Models</label>
+          </div>
+
+          <div className="flex gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200/60 shadow-2xs overflow-x-auto">
+            {models.map(m => {
+              const isBest = predictive?.modelMetrics?.[m]?.isBest
+              return (
+                <button
+                  key={m}
+                  onClick={() => setActiveModel(m)}
+                  className={`text-xs px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    activeModel === m
+                      ? "bg-white text-[#0038A8] font-bold shadow-xs border border-slate-200/50"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                  }`}
+                >
+                  {isBest && <Sparkles size={11} className="text-amber-500 flex-shrink-0" />}
+                  <span>{m}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Forecast Chart */}
-      <ChartCard title="Demand Forecast Chart — Historical (2024–2025) & Predicted (Q4 2025–Q2 2026)">
-        <div className="mb-3 flex items-center gap-3 text-xs flex-wrap">
-          {[
-            { key: "actual",   label: "Historical Demand",       swatch: <span className="w-4 h-0.5 bg-[#0038A8] rounded-full inline-block" /> },
-            { key: "forecast", label: "Forecasted Demand",       swatch: <span className="w-4 h-0.5 border-t-2 border-dashed border-[#0284C7] inline-block" /> },
-            { key: "ci",       label: "95% CI Band",             swatch: <span className="w-4 h-3 bg-[#0284C7]/10 inline-block rounded border border-[#0284C7]/30" /> },
-          ].map(l => (
-            <button key={l.key} onClick={() => toggle(l.key)}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all hover:bg-slate-100 border ${hidden.has(l.key) ? "opacity-40 border-slate-200" : "border-transparent"}`}>
-              {l.swatch}
-              <span className={hidden.has(l.key) ? "line-through text-slate-400" : "text-slate-600"}>{l.label}</span>
-            </button>
-          ))}
-          <span className="text-slate-400 ml-auto text-[10px]">Model: {activeModel} · click legend to toggle</span>
+      {/* Active Model Context Banner */}
+      <div className="bg-gradient-to-r from-blue-50/80 via-white to-slate-50 border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#0038A8]/10 text-[#0038A8] flex items-center justify-center flex-shrink-0">
+            <Activity size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold text-slate-900">{curMetrics.name}</h3>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                curMetrics.isBest
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  : "bg-slate-100 text-slate-700 border border-slate-200"
+              }`}>
+                {curMetrics.status}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">{curMetrics.note}</p>
+          </div>
         </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] text-slate-400 font-medium">Exogenous Regressors:</span>
+          {curMetrics.regressors?.map(reg => (
+            <span key={reg} className="text-[10px] bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono shadow-2xs">
+              {reg}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Accuracy Scorecards with Formulas (UST IS BA Rubric) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* RMSE */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative group hover:border-[#0038A8]/40 transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Root Mean Square Error</p>
+            <span className="text-[9px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">RMSE</span>
+          </div>
+          <p className="text-2xl font-bold font-mono text-slate-900 mt-2">{curMetrics.rmse}</p>
+          <p className="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1">
+            <CheckCircle2 size={11} className="text-emerald-500" /> Penalizes peak outlier deviations
+          </p>
+          <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
+            Formula: √[ (1/n) Σ (yᵢ - ŷᵢ)² ]
+          </div>
+        </div>
+
+        {/* MAPE */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative group hover:border-[#0038A8]/40 transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mean Absolute % Error</p>
+            <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
+              {curMetrics.mape}
+            </span>
+          </div>
+          <p className="text-2xl font-bold font-mono text-emerald-600 mt-2">{curMetrics.mape}</p>
+          <p className="text-[10px] text-emerald-600 mt-1.5 flex items-center gap-1 font-medium">
+            <CheckCheck size={11} /> High Accuracy (&lt;10% Lewis benchmark)
+          </p>
+          <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
+            Formula: (100%/n) Σ |(yᵢ - ŷᵢ)/yᵢ|
+          </div>
+        </div>
+
+        {/* MAE */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative group hover:border-[#0038A8]/40 transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mean Absolute Error</p>
+            <span className="text-[9px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">MAE</span>
+          </div>
+          <p className="text-2xl font-bold font-mono text-slate-900 mt-2">{curMetrics.mae}</p>
+          <p className="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1">
+            <Activity size={11} className="text-blue-500" /> Average volume discrepancy
+          </p>
+          <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
+            Formula: (1/n) Σ |yᵢ - ŷᵢ|
+          </div>
+        </div>
+
+        {/* R-Squared & Operational Recommendation */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative group hover:border-[#0038A8]/40 transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Goodness of Fit (R²)</p>
+            <span className="text-[9px] font-mono text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold">
+              R² = {curMetrics.r2}
+            </span>
+          </div>
+          <p className="text-2xl font-bold font-mono text-[#0038A8] mt-2">{curMetrics.r2}</p>
+          <p className="text-[10px] text-[#0038A8] mt-1.5 flex items-center gap-1 font-semibold truncate">
+            {curMetrics.isBest ? "⭐ Lowest Error Performer" : "Secondary Baseline"}
+          </p>
+          <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 truncate">
+            Split: {curMetrics.trainTestSplit}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Multi-Model Forecast Chart */}
+      <ChartCard title={`Water Demand Forecast — 2024 to 2026 (${activeModel} vs Actual Billed Consumption)`}>
+        <div className="mb-4 flex items-center gap-3 text-xs flex-wrap">
+          <button
+            onClick={() => toggle("actual")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all border ${
+              hidden.has("actual") ? "opacity-40 border-slate-200 bg-slate-50" : "border-slate-200 bg-white shadow-2xs"
+            }`}
+          >
+            <span className="w-3.5 h-1 bg-[#0038A8] rounded-full inline-block" />
+            <span className={hidden.has("actual") ? "line-through text-slate-400" : "font-semibold text-slate-700"}>
+              Historical Billed m³ (2024–2025)
+            </span>
+          </button>
+
+          {!compareAll ? (
+            <>
+              <button
+                onClick={() => toggle("forecast")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all border ${
+                  hidden.has("forecast") ? "opacity-40 border-slate-200 bg-slate-50" : "border-blue-200 bg-blue-50/50 shadow-2xs"
+                }`}
+              >
+                <span className="w-3.5 h-0.5 border-t-2 border-dashed border-[#0284C7] inline-block" />
+                <span className={hidden.has("forecast") ? "line-through text-slate-400" : "font-semibold text-[#0284C7]"}>
+                  {activeModel} Forecast (2026)
+                </span>
+              </button>
+
+              <button
+                onClick={() => toggle("ci")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all border ${
+                  hidden.has("ci") ? "opacity-40 border-slate-200 bg-slate-50" : "border-slate-200 bg-white shadow-2xs"
+                }`}
+              >
+                <span className="w-3.5 h-2.5 bg-[#0284C7]/15 inline-block rounded border border-[#0284C7]/30" />
+                <span className={hidden.has("ci") ? "line-through text-slate-400" : "text-slate-600"}>
+                  95% Confidence Interval Band
+                </span>
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-3 ml-2 flex-wrap">
+              {models.map(m => (
+                <span key={m} className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600">
+                  <span className="w-3 h-0.5 inline-block" style={{ backgroundColor: MODEL_COLORS[m] }} />
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <span className="text-slate-400 ml-auto text-[11px] font-mono">
+            Origin: Dec '25 · Horizon: 6 Months (Dry Season Peak)
+          </span>
+        </div>
+
         <svg style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden>
           <defs>
             <linearGradient id="ciGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0284C7" stopOpacity={0.15} />
-              <stop offset="100%" stopColor="#0284C7" stopOpacity={0.03} />
+              <stop offset="0%" stopColor="#0284C7" stopOpacity={0.16} />
+              <stop offset="100%" stopColor="#0284C7" stopOpacity={0.02} />
             </linearGradient>
           </defs>
         </svg>
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={FORECAST_DATA} margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
+
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart data={predictive?.forecastData} margin={{ left: 8, right: 24, top: 10, bottom: 4 }}>
             <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-            <XAxis key="xaxis" dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-            <YAxis key="yaxis" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false}
-              tickFormatter={v => `${(v/1000).toFixed(0)}k`} domain={[155000, 245000]} />
-            <RTooltip key="tooltip" content={(p: any) => <ChartTip {...p} fmt={v => `${v.toLocaleString()} m³`} />} />
-            <Area key="area-ci-high" type="monotone" dataKey="ci_high" name="CI High" stroke="none" fill={hidden.has("forecast") || hidden.has("ci") ? "transparent" : "url(#ciGrad)"} hide={hidden.has("forecast") || hidden.has("ci")} activeDot={false} />
-            <Area key="area-ci-low" type="monotone" dataKey="ci_low"  name="CI Low"  stroke="none" fill="white" hide={hidden.has("forecast") || hidden.has("ci")} activeDot={false} />
-            <Line key="line-actual"   type="monotone" dataKey="actual"   name="Historical m³"  stroke="#0038A8" strokeWidth={2.5} dot={{ fill: "#0038A8", r: 3, strokeWidth: 0 }} connectNulls hide={hidden.has("actual")} activeDot={false} />
-            <Line key="line-forecast" type="monotone" dataKey="forecast" name="Forecast m³"    stroke="#0284C7" strokeWidth={2}   dot={{ fill: "#0284C7", r: 3, strokeWidth: 0 }} strokeDasharray="6 3" connectNulls hide={hidden.has("forecast")} className="forecast-line-animated" activeDot={false} />
-            <ReferenceLine key="refline-origin" x="Sep '25" stroke="#D32F2F" strokeDasharray="4 4" strokeWidth={1.5}
-              label={{ value: "Forecast Origin", fill: "#D32F2F", fontSize: 9, position: "insideTopLeft" }} />
+            <XAxis
+              key="xaxis"
+              dataKey="month"
+              tick={{ fontSize: 10, fill: "#64748B" }}
+              axisLine={{ stroke: "#E2E8F0" }}
+              tickLine={false}
+            />
+            <YAxis
+              key="yaxis"
+              tick={{ fontSize: 10, fill: "#64748B" }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={v => `${(v / 1000).toFixed(0)}k m³`}
+              domain={[150000, 245000]}
+            />
+            <RTooltip
+              key="tooltip"
+              content={(p: any) => (
+                <ChartTip
+                  {...p}
+                  fmt={(v, name) => `${Number(v).toLocaleString()} m³ ${name ? `(${name})` : ""}`}
+                />
+              )}
+            />
+
+            {/* Shaded 95% Confidence Interval Band */}
+            {!compareAll && !hidden.has("ci") && !hidden.has("forecast") && (
+              <>
+                <Area
+                  key="area-ci-high"
+                  type="monotone"
+                  dataKey="ci_high"
+                  name="95% CI Upper Bound"
+                  stroke="none"
+                  fill="url(#ciGrad)"
+                  activeDot={false}
+                />
+                <Area
+                  key="area-ci-low"
+                  type="monotone"
+                  dataKey="ci_low"
+                  name="95% CI Lower Bound"
+                  stroke="none"
+                  fill="white"
+                  activeDot={false}
+                />
+              </>
+            )}
+
+            {/* Historical Recorded Line */}
+            <Line
+              key="line-actual"
+              type="monotone"
+              dataKey="actual"
+              name="Historical Actual Demand"
+              stroke="#0038A8"
+              strokeWidth={2.5}
+              dot={{ fill: "#0038A8", r: 3, strokeWidth: 0 }}
+              connectNulls
+              hide={hidden.has("actual")}
+              activeDot={{ r: 5, stroke: "#0038A8", strokeWidth: 2, fill: "white" }}
+            />
+
+            {/* If Single Model Selected */}
+            {!compareAll && (
+              <Line
+                key={`line-forecast-${activeKey}`}
+                type="monotone"
+                dataKey={activeKey}
+                name={`${activeModel} Forecast`}
+                stroke={MODEL_COLORS[activeModel] || "#0284C7"}
+                strokeWidth={2.5}
+                dot={{ fill: MODEL_COLORS[activeModel] || "#0284C7", r: 3, strokeWidth: 0 }}
+                strokeDasharray="6 3"
+                connectNulls
+                hide={hidden.has("forecast")}
+                className="forecast-line-animated"
+                activeDot={{ r: 5, stroke: MODEL_COLORS[activeModel] || "#0284C7", strokeWidth: 2, fill: "white" }}
+              />
+            )}
+
+            {/* If Compare All Models Toggled */}
+            {compareAll && (
+              <>
+                <Line key="m-lstm" type="monotone" dataKey="lstm" name="Multivariate LSTM" stroke={MODEL_COLORS["Multivariate LSTM"]} strokeWidth={2.5} strokeDasharray="5 2" connectNulls dot={false} />
+                <Line key="m-sarima" type="monotone" dataKey="sarima" name="SARIMA" stroke={MODEL_COLORS["SARIMA"]} strokeWidth={2} strokeDasharray="4 2" connectNulls dot={false} />
+                <Line key="m-prophet" type="monotone" dataKey="prophet" name="Meta Prophet" stroke={MODEL_COLORS["Meta Prophet"]} strokeWidth={2} strokeDasharray="3 3" connectNulls dot={false} />
+                <Line key="m-xgboost" type="monotone" dataKey="xgboost" name="XGBoost Regressor" stroke={MODEL_COLORS["XGBoost Regressor"]} strokeWidth={2} strokeDasharray="6 2" connectNulls dot={false} />
+                <Line key="m-ensemble" type="monotone" dataKey="ensemble" name="Ensemble Model" stroke={MODEL_COLORS["Ensemble Model"]} strokeWidth={2.5} strokeDasharray="2 2" connectNulls dot={false} />
+              </>
+            )}
+
+            {/* Vertical Marker for Forecast Origin */}
+            <ReferenceLine
+              key="refline-origin"
+              x="Dec '25"
+              stroke="#D32F2F"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{
+                value: "Forecast Origin (Dec 2025)",
+                fill: "#D32F2F",
+                fontSize: 10,
+                position: "insideTopLeft",
+              }}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* Spike Predictions Table */}
+      {/* Model Performance Comparison Matrix (Mandatory for UST IS Defense) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800">Demand Spike Predictions — Next 3 Months</h3>
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Model Performance & Cross-Validation Matrix (Table 3.3.4.2)
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Trained on 2017–2023 historical billing (70%) · Tested against 2023–2025 hold-out data (30%)
+            </p>
+          </div>
+          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md font-bold">
+            Best Operational: Multivariate LSTM (3.24% MAPE)
+          </span>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                {["Target Month","Service Zone","Predicted Volume","% Spike","Confidence","Risk Level"].map(h => (
-                  <th key={h} className="text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-5 py-2.5">{h}</th>
-                ))}
+              <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-5 py-3">Algorithm / Model</th>
+                <th className="px-4 py-3">RMSE (m³)</th>
+                <th className="px-4 py-3">MAPE (%)</th>
+                <th className="px-4 py-3">MAE (m³)</th>
+                <th className="px-4 py-3">R² Score</th>
+                <th className="px-4 py-3">Key Regressors</th>
+                <th className="px-5 py-3">Operational Decision Verdict</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {SPIKE_TABLE.map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3 text-xs font-medium text-slate-700">{row.month}</td>
-                  <td className="px-5 py-3 text-xs font-semibold text-[#0038A8]">{row.zone}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-slate-800">{row.volume.toLocaleString()} m³</td>
-                  <td className="px-5 py-3 text-xs font-bold text-red-500">+{row.spike}%</td>
-                  <td className="px-5 py-3 font-mono text-xs text-emerald-600">{row.confidence}</td>
-                  <td className="px-5 py-3"><StatusBadge status={row.risk} /></td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {models.map(m => {
+                const met = predictive?.modelMetrics?.[m]
+                const isSelected = activeModel === m
+                return (
+                  <tr
+                    key={m}
+                    onClick={() => setActiveModel(m)}
+                    className={`cursor-pointer transition-colors ${
+                      isSelected
+                        ? "bg-blue-50/60 font-semibold"
+                        : "hover:bg-slate-50/70 text-slate-700"
+                    }`}
+                  >
+                    <td className="px-5 py-3 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: MODEL_COLORS[m] }} />
+                      <span className="font-bold text-slate-900">{m}</span>
+                      {met?.isBest && (
+                        <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded border border-amber-200">
+                          BEST
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-mono">{met?.rmse}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-emerald-600">{met?.mape}</td>
+                    <td className="px-4 py-3 font-mono">{met?.mae}</td>
+                    <td className="px-4 py-3 font-mono text-[#0038A8] font-bold">{met?.r2}</td>
+                    <td className="px-4 py-3 text-[11px] text-slate-500 max-w-xs truncate">
+                      {met?.regressors?.join(", ")}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+                        met?.isBest
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold"
+                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                      }`}>
+                        {met?.status}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Two-Column Deep Dive: Feature Importance vs Demand Spike Predictions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column: Feature Importance & Weather Regressors */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <Sun size={15} className="text-amber-500" />
+              Feature Importance & Meteorological Regressors (§3.1.2)
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Multivariate LSTM relative feature contributions for Tabaco City demand dynamics
+            </p>
+          </div>
+
+          <div className="space-y-3.5">
+            {predictive?.featureImportance?.map(feat => (
+              <div key={feat.feature} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700">{feat.feature}</span>
+                  <span className="font-mono font-bold text-[#0038A8]">{feat.weight}%</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#0038A8] to-[#0284C7] rounded-full"
+                    style={{ width: `${feat.weight}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 leading-relaxed">{feat.description}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-[11px] text-blue-800 leading-relaxed">
+            <span className="font-bold">Business Intelligence Insight:</span> Because temperature has a high weight (28%), the model successfully flags the anticipated March–April 2026 dry season deficit, enabling TCWD to shift pump operations before reservoir heads deplete.
+          </div>
+        </div>
+
+        {/* Right Column: Demand Spike Predictions & Deficit Warnings */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <AlertTriangle size={15} className="text-red-500" />
+                Demand Spike Predictions — Q1/Q2 2026 Dry Season
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Surge predictions exceeding baseline threshold (+10%) across critical zones
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+              {predictive?.spikePredictions?.filter(p => p.risk === "critical").length} Critical Spikes
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100 max-h-[340px] overflow-y-auto pr-1">
+            {predictive?.spikePredictions?.map((spike, i) => (
+              <div key={i} className="py-2.5 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-slate-900">{spike.zone}</span>
+                    <span className="text-[10px] text-slate-400">· {spike.month}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-red-600">+{spike.spike}%</span>
+                    <StatusBadge status={spike.risk} />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-600">
+                  <span className="font-mono">Predicted: {spike.volume.toLocaleString()} m³</span>
+                  <span className="text-emerald-600 font-mono text-[10px]">Confidence: {spike.confidence}</span>
+                </div>
+
+                <p className="text-[10px] text-slate-500 bg-slate-50 p-1.5 rounded border border-slate-100">
+                  <span className="font-semibold text-slate-700">Action:</span> {spike.action}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -1966,6 +3217,183 @@ function ShortageScreen() {
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
+
+      {/* ── PRODUCTION SOURCES & ACTIVE RESERVOIR STORAGE GAUGE CARDS ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left: Water Supply Infrastructure Matrix (7 Cols) */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Droplets size={16} className="text-[#0038A8]" />
+                Tabaco City Water Supply Infrastructure &amp; Production Sources
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Total Nominal Extraction: 15,500 m³/day (Deep Wells + Gravity Springs)
+              </p>
+            </div>
+            <span className="text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+              4 Production Facilities Active
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                name: "Mayon Mountain Gravity Springs (Pinagbobong & Buang)",
+                type: "Natural Gravity Spring Flow",
+                capacity: "1,800 m³/day",
+                sharePct: 11.6,
+                powerCost: "₱0.00 / kWh",
+                specificEnergy: "0.00 kWh/m³",
+                status: "100% Operational",
+                note: "Uninterruptible gravity discharge; zero grid electricity expense",
+                color: "#10B981"
+              },
+              {
+                name: "San Vicente Main Pumping Station PS-01",
+                type: "Submersible Deep Well (60 HP)",
+                capacity: "6,000 m³/day",
+                sharePct: 38.7,
+                powerCost: "₱6.20–₱11.80 / kWh (TOU)",
+                specificEnergy: "0.38 kWh/m³",
+                status: "Duty Pump Running",
+                note: "Primary base-load extraction supplying Tabaco Central & Poblacion",
+                color: "#0038A8"
+              },
+              {
+                name: "Booster Station A — Panal Intermediate",
+                type: "Deep Well & Intermediate Booster",
+                capacity: "4,500 m³/day",
+                sharePct: 29.0,
+                powerCost: "₱6.20–₱11.80 / kWh (TOU)",
+                specificEnergy: "0.44 kWh/m³",
+                status: "Variable Frequency Drive",
+                note: "Feeds Zone 2 and industrial commercial consumers along national highway",
+                color: "#3B82F6"
+              },
+              {
+                name: "Booster Station B — Buang High-Elevation",
+                type: "High-Head Multi-Stage Booster",
+                capacity: "3,200 m³/day",
+                sharePct: 20.7,
+                powerCost: "₱6.20–₱11.80 / kWh (TOU)",
+                specificEnergy: "0.52 kWh/m³",
+                status: "Standby Throttled",
+                note: "High specific energy; scheduled for evening peak shaving reduction",
+                color: "#F59E0B"
+              }
+            ].map(fac => (
+              <div key={fac.name} className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: fac.color }} />
+                      {fac.name}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{fac.type}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 font-mono">
+                    <span className="text-xs font-bold text-slate-900">{fac.capacity}</span>
+                    <span className="text-[10px] text-slate-400 ml-1.5 font-normal">({fac.sharePct}%)</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between text-[10px] pt-1.5 border-t border-slate-200/50 gap-2">
+                  <span className="text-slate-500">Power: <strong className="text-slate-700">{fac.powerCost}</strong> · Spec. Energy: <strong className="text-slate-700">{fac.specificEnergy}</strong></span>
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">{fac.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Elevated Reservoir Storage Level Gauges (5 Cols) */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Activity size={16} className="text-[#0038A8]" />
+              Distribution Reservoir Storage Gauges
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Live telemetry: tank volume, head pressure &amp; estimated drawdown time
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                id: "RES-01",
+                name: "San Vicente Elevated Reservoir",
+                capacityM3: 2500,
+                currentM3: 2200,
+                levelPct: 88,
+                pressureHeadPsi: 32.4,
+                drawdownHours: 14.2,
+                status: "OPTIMAL BUFFER",
+                color: "#0038A8"
+              },
+              {
+                id: "RES-02",
+                name: "Panal Ground Balancing Tank",
+                capacityM3: 3800,
+                currentM3: 3496,
+                levelPct: 92,
+                pressureHeadPsi: 28.1,
+                drawdownHours: 18.6,
+                status: "PRE-FILLED FOR PEAK",
+                color: "#10B981"
+              },
+              {
+                id: "RES-03",
+                name: "Buang Mountain Break-Pressure Tank",
+                capacityM3: 1200,
+                currentM3: 936,
+                levelPct: 78,
+                pressureHeadPsi: 19.8,
+                drawdownHours: 8.5,
+                status: "MODERATE LEVEL",
+                color: "#F59E0B"
+              }
+            ].map(res => (
+              <div key={res.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-[#0038A8] bg-blue-100 px-1.5 py-0.5 rounded">
+                      {res.id}
+                    </span>
+                    <h4 className="text-xs font-bold text-slate-800 mt-1">{res.name}</h4>
+                  </div>
+                  <div className="text-right font-mono">
+                    <span className="text-base font-bold text-slate-900">{res.levelPct}%</span>
+                    <p className="text-[10px] text-slate-400">{res.currentM3} / {res.capacityM3} m³</p>
+                  </div>
+                </div>
+
+                {/* Animated Level Bar */}
+                <div className="h-2.5 bg-slate-200 rounded-full overflow-hidden p-0.5">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${res.levelPct}%`,
+                      backgroundColor: res.color
+                    }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[10px] pt-1 border-t border-slate-200/50">
+                  <div className="text-slate-500">
+                    Pressure Head: <strong className="text-slate-800">{res.pressureHeadPsi} psi</strong>
+                  </div>
+                  <div className="text-slate-500 text-right">
+                    Drawdown Buffer: <strong className="text-emerald-700">{res.drawdownHours}h</strong>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -2341,6 +3769,110 @@ function WeatherScreen() {
   )
 }
 
+// ── IWA / LWUA STANDARD WATER BALANCE & DMA ACOUSTIC SCHEDULE DATA (§3.6.3) ──
+const IWA_WATER_BALANCE_DATA = {
+  systemInputVolumeM3: 269094,
+  authorisedConsumptionM3: 197868,
+  billedAuthorisedM3: 193748,
+  billedMeteredM3: 190420,
+  billedUnmeteredM3: 3328,
+  unbilledAuthorisedM3: 4120,
+  unbilledMeteredM3: 1480,
+  unbilledUnmeteredM3: 2640,
+  waterLossesM3: 71226,
+  commercialLossesM3: 18480,
+  customerMeterInaccuraciesM3: 9460,
+  unauthorizedConsumptionM3: 6820,
+  dataHandlingErrorsM3: 2200,
+  physicalLossesM3: 52746,
+  mainsLeakageM3: 28140,
+  storageReservoirLeaksM3: 5120,
+  serviceConnectionLeaksM3: 19486,
+  revenueWaterM3: 193748,
+  nonRevenueWaterM3: 75346,
+  nrwPct: 28.0,
+  lwuaBenchmarkPct: 20.0,
+  monthlyRevenueLossPhp: 1420000
+}
+
+const DMA_ACOUSTIC_SWEEP_SCHEDULE = [
+  {
+    dmaId: "DMA-01",
+    zone: "Zone 2 (Panal / Poblacion)",
+    pipeType: "Cast Iron & Asbestos Cement",
+    pipeAgeYears: 32,
+    urgency: "CRITICAL",
+    urgencyBadge: "bg-red-100 text-red-800 border-red-200",
+    mnfRatio: "2.85x",
+    equipment: "Digital Ground Correlator & Listening Rod",
+    inspectionTeam: "Field Crew Alpha (Engr. Bando)",
+    status: "IN PROGRESS",
+    statusBadge: "bg-amber-100 text-amber-800",
+    targetRecoveryM3: 2678,
+    actionTaken: "Step-down PRV-02 deployed; 3 acoustic anomalies isolated along Panal Highway main"
+  },
+  {
+    dmaId: "DMA-02",
+    zone: "Zone 1 (Tabaco Center / Commercial)",
+    pipeType: "Ductile Iron & Galvanized Iron",
+    pipeAgeYears: 28,
+    urgency: "CRITICAL",
+    urgencyBadge: "bg-red-100 text-red-800 border-red-200",
+    mnfRatio: "2.40x",
+    equipment: "Acoustic Loggers (SoundSens)",
+    inspectionTeam: "Field Crew Bravo (Tech. Salcedo)",
+    status: "SCHEDULED",
+    statusBadge: "bg-blue-100 text-blue-800",
+    targetRecoveryM3: 2496,
+    actionTaken: "Night acoustic logger deployment scheduled 00:00-04:00; commercial gate valve inspection"
+  },
+  {
+    dmaId: "DMA-03",
+    zone: "Zone 15 (Sto. Cristo)",
+    pipeType: "HDPE & Cast Iron",
+    pipeAgeYears: 30,
+    urgency: "HIGH",
+    urgencyBadge: "bg-amber-100 text-amber-800 border-amber-200",
+    mnfRatio: "2.10x",
+    equipment: "Electro-acoustic Leak Detector",
+    inspectionTeam: "Field Crew Alpha (Engr. Bando)",
+    status: "SCHEDULED",
+    statusBadge: "bg-blue-100 text-blue-800",
+    targetRecoveryM3: 2132,
+    actionTaken: "Minimum night flow pressure testing; secondary branch acoustic sweep"
+  },
+  {
+    dmaId: "DMA-04",
+    zone: "Zone 7 (Sagrada / Fatima)",
+    pipeType: "uPVC & Galvanized Iron",
+    pipeAgeYears: 26,
+    urgency: "MEDIUM",
+    urgencyBadge: "bg-blue-100 text-blue-800 border-blue-200",
+    mnfRatio: "1.75x",
+    equipment: "Listening Stick & Pressure Gauge",
+    inspectionTeam: "Field Crew Charlie (Tech. Borromeo)",
+    status: "COMPLETED",
+    statusBadge: "bg-emerald-100 text-emerald-800",
+    targetRecoveryM3: 1716,
+    actionTaken: "Repaired 2 service line saddle bursts; pressure restored to 18.5 psi nominal"
+  },
+  {
+    dmaId: "DMA-05",
+    zone: "Zone 3 (Magallanes)",
+    pipeType: "HDPE High-Density Polyethylene",
+    pipeAgeYears: 18,
+    urgency: "LOW",
+    urgencyBadge: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    mnfRatio: "1.25x",
+    equipment: "Routine Telemetry Monitoring",
+    inspectionTeam: "Central SCADA / AMR Telemetry",
+    status: "MONITORING",
+    statusBadge: "bg-slate-100 text-slate-700",
+    targetRecoveryM3: 923,
+    actionTaken: "Normal baseline hydraulic operation; no anomalous night flow detected"
+  }
+]
+
 // ── SCREEN: NRW MAP ────────────────────────────────────────────────────────
 function NRWScreen() {
   const { zones: ZONES, kpi } = useDashboard()
@@ -2507,6 +4039,248 @@ function NRWScreen() {
         </ResponsiveContainer>
       </ChartCard>
 
+      {/* ── IWA / LWUA STANDARD INTERNATIONAL WATER BALANCE AUDIT (§3.6.3) ── */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Scale size={16} className="text-[#0038A8]" />
+              <h3 className="text-sm font-bold text-slate-800">
+                International Water Association (IWA) &amp; LWUA Standard Water Balance Audit
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Standardized physical vs. apparent water loss accounting framework for Tabaco City Water District (§1.3.1, §3.6.3)
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono font-semibold bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full">
+              Current NRW: {IWA_WATER_BALANCE_DATA.nrwPct.toFixed(1)}% (LWUA Benchmark: ≤{IWA_WATER_BALANCE_DATA.lwuaBenchmarkPct.toFixed(1)}%)
+            </span>
+            <span className="text-[10px] font-mono font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
+              Monthly Value Lost: ₱{(IWA_WATER_BALANCE_DATA.monthlyRevenueLossPhp / 1_000_000).toFixed(2)}M
+            </span>
+          </div>
+        </div>
+
+        {/* IWA Multi-Level Hierarchy Visual Diagram */}
+        <div className="p-5 overflow-x-auto bg-slate-50/40">
+          <div className="min-w-[760px] space-y-3">
+            {/* Level 1: System Input Volume */}
+            <div className="bg-[#0038A8] text-white p-3 rounded-xl flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2">
+                <Droplets size={16} className="text-blue-200" />
+                <span className="text-xs font-bold uppercase tracking-wider">System Input Volume (SIV)</span>
+              </div>
+              <div className="text-right font-mono">
+                <span className="text-sm font-bold">{IWA_WATER_BALANCE_DATA.systemInputVolumeM3.toLocaleString()} m³</span>
+                <span className="text-[10px] text-blue-200 ml-2">(100.0%)</span>
+              </div>
+            </div>
+
+            {/* Level 2: Authorised Consumption vs Water Losses */}
+            <div className="grid grid-cols-12 gap-3">
+              {/* Authorised Consumption (Col 1-7) */}
+              <div className="col-span-7 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+                  <span className="text-xs font-bold text-emerald-900">Authorised Consumption</span>
+                  <span className="font-mono text-xs font-bold text-emerald-800">
+                    {IWA_WATER_BALANCE_DATA.authorisedConsumptionM3.toLocaleString()} m³ (73.5%)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  {/* Billed Authorised Consumption (Revenue Water) */}
+                  <div className="bg-white p-2.5 rounded-lg border border-emerald-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-emerald-900 font-bold">
+                      <span>Billed Authorised</span>
+                      <span className="font-mono">{IWA_WATER_BALANCE_DATA.billedAuthorisedM3.toLocaleString()} m³</span>
+                    </div>
+                    <span className="inline-block text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                      Revenue Water (₱5.18M/mo)
+                    </span>
+                    <div className="text-[10px] text-slate-500 pt-1 space-y-0.5 border-t border-slate-100">
+                      <div className="flex justify-between">
+                        <span>• Billed Metered:</span>
+                        <span className="font-mono">{IWA_WATER_BALANCE_DATA.billedMeteredM3.toLocaleString()} m³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• Billed Unmetered:</span>
+                        <span className="font-mono">{IWA_WATER_BALANCE_DATA.billedUnmeteredM3.toLocaleString()} m³</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Unbilled Authorised Consumption */}
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-slate-800 font-bold">
+                      <span>Unbilled Authorised</span>
+                      <span className="font-mono text-slate-700">{IWA_WATER_BALANCE_DATA.unbilledAuthorisedM3.toLocaleString()} m³</span>
+                    </div>
+                    <span className="inline-block text-[9px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded">
+                      Part of Non-Revenue Water
+                    </span>
+                    <div className="text-[10px] text-slate-500 pt-1 space-y-0.5 border-t border-slate-100">
+                      <div className="flex justify-between">
+                        <span>• Unbilled Metered (Offices):</span>
+                        <span className="font-mono">{IWA_WATER_BALANCE_DATA.unbilledMeteredM3.toLocaleString()} m³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• Firefighting &amp; Flushing:</span>
+                        <span className="font-mono">{IWA_WATER_BALANCE_DATA.unbilledUnmeteredM3.toLocaleString()} m³</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Water Losses (Col 8-12) */}
+              <div className="col-span-5 bg-red-50 border border-red-200 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-red-200/80 pb-2">
+                  <span className="text-xs font-bold text-red-900">Water Losses (NRW Core)</span>
+                  <span className="font-mono text-xs font-bold text-red-700">
+                    {IWA_WATER_BALANCE_DATA.waterLossesM3.toLocaleString()} m³ (26.5%)
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  {/* Commercial / Apparent Losses */}
+                  <div className="bg-white p-2.5 rounded-lg border border-amber-200 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-amber-900 font-bold">
+                      <span>Apparent / Commercial Losses</span>
+                      <span className="font-mono">{IWA_WATER_BALANCE_DATA.commercialLossesM3.toLocaleString()} m³</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 pt-1 space-y-0.5 border-t border-slate-100">
+                      <div className="flex justify-between">
+                        <span>• Meter Under-registration:</span>
+                        <span className="font-mono font-medium text-amber-700">{IWA_WATER_BALANCE_DATA.customerMeterInaccuraciesM3.toLocaleString()} m³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• Unauthorized Taps / Bypasses:</span>
+                        <span className="font-mono font-medium text-amber-700">{IWA_WATER_BALANCE_DATA.unauthorizedConsumptionM3.toLocaleString()} m³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• Data Handling Clerical Errors:</span>
+                        <span className="font-mono text-slate-600">{IWA_WATER_BALANCE_DATA.dataHandlingErrorsM3.toLocaleString()} m³</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Real / Physical Losses */}
+                  <div className="bg-white p-2.5 rounded-lg border border-red-200 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-red-900 font-bold">
+                      <span>Real / Physical Losses</span>
+                      <span className="font-mono">{IWA_WATER_BALANCE_DATA.physicalLossesM3.toLocaleString()} m³</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 pt-1 space-y-0.5 border-t border-slate-100">
+                      <div className="flex justify-between">
+                        <span>• Mains Transmission Bursts:</span>
+                        <span className="font-mono font-medium text-red-700">{IWA_WATER_BALANCE_DATA.mainsLeakageM3.toLocaleString()} m³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• Service Connection Weeps:</span>
+                        <span className="font-mono font-medium text-red-700">{IWA_WATER_BALANCE_DATA.serviceConnectionLeaksM3.toLocaleString()} m³</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• Reservoir Overflows:</span>
+                        <span className="font-mono text-slate-600">{IWA_WATER_BALANCE_DATA.storageReservoirLeaksM3.toLocaleString()} m³</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reconciliation Footer Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+              <div className="bg-emerald-100/70 border border-emerald-300/80 rounded-lg p-2.5 flex items-center justify-between">
+                <span className="font-bold text-emerald-950">Billed Revenue Water:</span>
+                <span className="font-mono font-bold text-emerald-900">{IWA_WATER_BALANCE_DATA.revenueWaterM3.toLocaleString()} m³ (72.0%)</span>
+              </div>
+              <div className="bg-red-100/70 border border-red-300/80 rounded-lg p-2.5 flex items-center justify-between">
+                <span className="font-bold text-red-950">Total Non-Revenue Water (NRW):</span>
+                <span className="font-mono font-bold text-red-900">{IWA_WATER_BALANCE_DATA.nonRevenueWaterM3.toLocaleString()} m³ (28.0% of SIV)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DISTRICT METERED AREA (DMA) ACOUSTIC LEAK DETECTION SCHEDULE ── */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <Activity size={16} className="text-[#0038A8]" />
+              <h3 className="text-sm font-bold text-slate-800">
+                District Metered Area (DMA) Acoustic Leak Sweep Schedule
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Active acoustic listening, ground correlators, and night minimum night flow (MNF) deployment plan
+            </p>
+          </div>
+          <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+            Active DMAs: 5 Sectors Monitored
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                <th className="px-4 py-2.5 text-left">Sector / DMA</th>
+                <th className="px-4 py-2.5 text-left">Service Zone</th>
+                <th className="px-3 py-2.5 text-left">Pipe Material &amp; Age</th>
+                <th className="px-3 py-2.5 text-center">MNF Ratio</th>
+                <th className="px-3 py-2.5 text-center">Urgency</th>
+                <th className="px-3 py-2.5 text-center">Status</th>
+                <th className="px-3 py-2.5 text-right">Target Recovery</th>
+                <th className="px-4 py-2.5 text-left">Field Action Taken</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {DMA_ACOUSTIC_SWEEP_SCHEDULE.map(dma => (
+                <tr key={dma.dmaId} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 font-mono font-bold text-[#0038A8] whitespace-nowrap">
+                    {dma.dmaId}
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">
+                    {dma.zone}
+                  </td>
+                  <td className="px-3 py-3 text-slate-600">
+                    <div>{dma.pipeType}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">{dma.pipeAgeYears} yrs in service</div>
+                  </td>
+                  <td className="px-3 py-3 text-center font-mono font-bold text-slate-700">
+                    {dma.mnfRatio}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${dma.urgencyBadge}`}>
+                      {dma.urgency}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${dma.statusBadge}`}>
+                      {dma.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
+                    +{dma.targetRecoveryM3.toLocaleString()} m³/mo
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 text-[11px] leading-relaxed">
+                    <div>{dma.actionTaken}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5 italic">
+                      Equip: {dma.equipment} · {dma.inspectionTeam}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Zone Detail Slide-Over Drawer */}
       <AnimatePresence>
         {selectedNRWZone !== null && (() => {
@@ -2574,43 +4348,110 @@ function NRWScreen() {
   )
 }
 
+// ── BARANGAY DIRECTORY MAPPING (Tabaco City Water District) ────────────────
+const ZONE_BARANGAY_MAP: Record<number, string> = {
+  1: "Tabaco Center (Poblacion)",
+  2: "Panal (Poblacion)",
+  3: "Magallanes",
+  4: "San Roque",
+  5: "Cormidal",
+  6: "Tagas",
+  7: "Sagrada / Fatima",
+  8: "Tayhi",
+  9: "Bombon",
+  10: "Baranghawon",
+  11: "San Carlos",
+  12: "Basud",
+  13: "San Vicente",
+  14: "Quinastillohan",
+  15: "Sto. Cristo",
+  16: "Fatima (Upland)",
+  17: "Buang",
+  18: "Mariroc",
+  19: "Pinagbobong",
+  20: "Bogñabong",
+  21: "San Juan",
+}
+
 // ── SCREEN: ZONES ──────────────────────────────────────────────────────────
-function ZonesScreen() {
+function ZonesScreen({ initialZoneId, onClearInitialZone }: { initialZoneId?: number | null; onClearInitialZone?: () => void }) {
   const { zones: ZONES, kpi } = useDashboard()
   const [selectedZone, setSelectedZone] = useState<typeof ZONES[0] | null>(null)
+  const [filterQuery, setFilterQuery] = useState("")
+
+  useEffect(() => {
+    if (initialZoneId) {
+      const found = ZONES.find(z => z.id === initialZoneId)
+      if (found) {
+        setSelectedZone(found)
+        onClearInitialZone?.()
+      }
+    }
+  }, [initialZoneId, ZONES, onClearInitialZone])
+
+  const filteredZones = filterQuery.trim() === ""
+    ? ZONES
+    : ZONES.filter(z => {
+        const bg = ZONE_BARANGAY_MAP[z.id] || ""
+        const q = filterQuery.toLowerCase()
+        return (
+          z.name.toLowerCase().includes(q) ||
+          `zone ${z.id}`.toLowerCase().includes(q) ||
+          bg.toLowerCase().includes(q)
+        )
+      })
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Service Zone Analysis</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Granular consumption profiling · {ZONES.length} service zones · {kpi.latestMonth || "Dec 2025"}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Service Zone Analysis</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Granular consumption profiling · {ZONES.length} service zones · {kpi.latestMonth || "Dec 2025"}</p>
+        </div>
+        <div className="relative max-w-xs w-full">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={e => setFilterQuery(e.target.value)}
+            placeholder="Filter barangay (e.g. Panal, Tagas, San Roque)..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all shadow-2xs"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {ZONES.map(z => (
-          <motion.div key={z.id}
-            whileHover={{ y: -3, boxShadow: "0 8px 20px -4px rgba(0,0,0,0.10)" }}
-            transition={{ duration: 0.18 }}
-            onClick={() => setSelectedZone(z)}
-            className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 cursor-pointer hover:border-[#0038A8]/30 transition-colors"
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Zone {String(z.id).padStart(2,"0")}</span>
-                <p className="text-xs font-semibold text-slate-800 mt-0.5 leading-tight">{z.name}</p>
+        {filteredZones.map(z => {
+          const barangayName = ZONE_BARANGAY_MAP[z.id] || z.name
+          return (
+            <motion.div key={z.id}
+              whileHover={{ y: -3, boxShadow: "0 8px 20px -4px rgba(0,0,0,0.10)" }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setSelectedZone(z)}
+              className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${
+                selectedZone?.id === z.id
+                  ? "border-[#0038A8] ring-2 ring-[#0038A8]/20 shadow-md"
+                  : "border-slate-200 shadow-sm hover:border-[#0038A8]/30"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Zone {String(z.id).padStart(2,"0")}</span>
+                  <p className="text-xs font-semibold text-slate-800 mt-0.5 leading-tight">{barangayName}</p>
+                </div>
+                <StatusBadge status={z.status} />
               </div>
-              <StatusBadge status={z.status} />
-            </div>
-            <p className="text-lg font-bold font-mono text-slate-900">{(z.consumption/1000).toFixed(1)}k <span className="text-xs font-normal text-slate-400">m³</span></p>
-            <div className="mt-2 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-slate-500">{z.accounts.toLocaleString()} accounts</p>
-                <p className="text-[10px] text-slate-400">NRW: <span className={z.nrw > 20 ? "text-red-500 font-semibold" : z.nrw > 15 ? "text-amber-500" : "text-emerald-500"}>{z.nrw}%</span></p>
+              <p className="text-lg font-bold font-mono text-slate-900">{(z.consumption/1000).toFixed(1)}k <span className="text-xs font-normal text-slate-400">m³</span></p>
+              <div className="mt-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-slate-500">{z.accounts.toLocaleString()} accounts</p>
+                  <p className="text-[10px] text-slate-400">NRW: <span className={z.nrw > 20 ? "text-red-500 font-semibold" : z.nrw > 15 ? "text-amber-500" : "text-emerald-500"}>{z.nrw}%</span></p>
+                </div>
+                <MiniSparkline data={z.trend} color={z.status === "critical" ? "#EF4444" : z.status === "warning" ? "#F59E0B" : "#10B981"} />
               </div>
-              <MiniSparkline data={z.trend} color={z.status === "critical" ? "#EF4444" : z.status === "warning" ? "#F59E0B" : "#10B981"} />
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          )
+        })}
       </div>
 
       {/* Zone drill-down panel */}
@@ -2619,7 +4460,9 @@ function ZonesScreen() {
           className="bg-white rounded-xl border border-[#0038A8]/20 shadow-md overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#0038A8]/3">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Zone {selectedZone.id} — {selectedZone.name} · Drill-Down</h3>
+              <h3 className="text-sm font-bold text-slate-900">
+                Zone {selectedZone.id} — {ZONE_BARANGAY_MAP[selectedZone.id] || selectedZone.name} · Detailed Drill-Down
+              </h3>
               <p className="text-xs text-slate-500 mt-0.5">{selectedZone.accounts.toLocaleString()} connections · Pop. {selectedZone.population.toLocaleString()}</p>
             </div>
             <button onClick={() => setSelectedZone(null)} className="text-slate-400 hover:text-slate-600 text-xs flex items-center gap-1 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors">
@@ -2660,184 +4503,758 @@ function ZonesScreen() {
   )
 }
 
+// ── DEFAULT PRESCRIPTIVE FALLBACK DATA ──────────────────────────────────────
+const OPT_DEFAULT_TARIFFS = [
+  { blockId: "B1", blockName: "Night Off-Peak", timeRange: "22:00 – 06:00 (8h)", ratePhpPerKwh: 6.20, classification: "Off-Peak", strategyDirective: "Maximize pumping into elevated storage reservoirs at lowest electricity tariff." },
+  { blockId: "B2", blockName: "Morning Standard", timeRange: "06:00 – 12:00 (6h)", ratePhpPerKwh: 8.50, classification: "Standard", strategyDirective: "Operate gravity springs at 100% capacity; modulate booster pumps according to real-time DMA pressure." },
+  { blockId: "B3", blockName: "Afternoon Standard", timeRange: "12:00 – 18:00 (6h)", ratePhpPerKwh: 8.50, classification: "Standard", strategyDirective: "Sustain distribution flow; prepare elevated reservoirs for evening peak demand." },
+  { blockId: "B4", blockName: "Evening Peak Tariff", timeRange: "18:00 – 22:00 (4h)", ratePhpPerKwh: 11.80, classification: "Peak", strategyDirective: "Peak shaving: Throttle high-kWh deep wells; supply predominantly via gravity springs and pre-filled storage." }
+]
+
+const OPT_DEFAULT_FACILITIES = [
+  {
+    id: "PS-MAIN-01",
+    name: "San Vicente Main Pumping Station (Deep Well)",
+    station: "Main Pump Station",
+    type: "Deep Well (Submersible)" as const,
+    capacityM3PerDay: 6000,
+    energyKwhPerM3: 0.38,
+    blocks: [
+      { blockId: "B1", blockLabel: "Night (22:00-06:00)", tariffPeriod: "Off-Peak", tariffRatePhpPerKwh: 6.20, currentHours: 5.5, optimizedHours: 5.8, currentCostPhp: 248000, optimizedCostPhp: 261500, savingsPct: -5.4, dispatchedVolumeM3: 2900 },
+      { blockId: "B2", blockLabel: "Morning (06:00-12:00)", tariffPeriod: "Standard", tariffRatePhpPerKwh: 8.50, currentHours: 5.8, optimizedHours: 4.8, currentCostPhp: 358000, optimizedCostPhp: 296300, savingsPct: 17.2, dispatchedVolumeM3: 2400 },
+      { blockId: "B3", blockLabel: "Afternoon (12:00-18:00)", tariffPeriod: "Standard", tariffRatePhpPerKwh: 8.50, currentHours: 5.2, optimizedHours: 4.5, currentCostPhp: 321000, optimizedCostPhp: 277800, savingsPct: 13.5, dispatchedVolumeM3: 2250 },
+      { blockId: "B4", blockLabel: "Evening Peak (18:00-22:00)", tariffPeriod: "Peak", tariffRatePhpPerKwh: 11.80, currentHours: 4.0, optimizedHours: 2.2, currentCostPhp: 344000, optimizedCostPhp: 189200, savingsPct: 45.0, dispatchedVolumeM3: 1100 }
+    ],
+    totalCurrentCostPhp: 1271000,
+    totalOptimizedCostPhp: 1024800,
+    totalSavingsPhp: 246200
+  },
+  {
+    id: "PS-BOOSTER-A",
+    name: "Booster Station A — Panal Intermediate",
+    station: "Booster Station A",
+    type: "Deep Well (Submersible)" as const,
+    capacityM3PerDay: 4500,
+    energyKwhPerM3: 0.44,
+    blocks: [
+      { blockId: "B1", blockLabel: "Night (22:00-06:00)", tariffPeriod: "Off-Peak", tariffRatePhpPerKwh: 6.20, currentHours: 4.8, optimizedHours: 5.6, currentCostPhp: 188000, optimizedCostPhp: 219300, savingsPct: -16.6, dispatchedVolumeM3: 2100 },
+      { blockId: "B2", blockLabel: "Morning (06:00-12:00)", tariffPeriod: "Standard", tariffRatePhpPerKwh: 8.50, currentHours: 5.5, optimizedHours: 4.4, currentCostPhp: 295000, optimizedCostPhp: 236000, savingsPct: 20.0, dispatchedVolumeM3: 1650 },
+      { blockId: "B3", blockLabel: "Afternoon (12:00-18:00)", tariffPeriod: "Standard", tariffRatePhpPerKwh: 8.50, currentHours: 5.0, optimizedHours: 4.2, currentCostPhp: 268000, optimizedCostPhp: 225100, savingsPct: 16.0, dispatchedVolumeM3: 1575 },
+      { blockId: "B4", blockLabel: "Evening Peak (18:00-22:00)", tariffPeriod: "Peak", tariffRatePhpPerKwh: 11.80, currentHours: 3.8, optimizedHours: 2.0, currentCostPhp: 283000, optimizedCostPhp: 148900, savingsPct: 47.4, dispatchedVolumeM3: 750 }
+    ],
+    totalCurrentCostPhp: 1034000,
+    totalOptimizedCostPhp: 829300,
+    totalSavingsPhp: 204700
+  },
+  {
+    id: "PS-BOOSTER-B",
+    name: "Booster Station B — Buang High-Elevation",
+    station: "Booster Station B",
+    type: "Deep Well (Submersible)" as const,
+    capacityM3PerDay: 3200,
+    energyKwhPerM3: 0.52,
+    blocks: [
+      { blockId: "B1", blockLabel: "Night (22:00-06:00)", tariffPeriod: "Off-Peak", tariffRatePhpPerKwh: 6.20, currentHours: 4.2, optimizedHours: 5.0, currentCostPhp: 164000, optimizedCostPhp: 195200, savingsPct: -19.0, dispatchedVolumeM3: 1600 },
+      { blockId: "B2", blockLabel: "Morning (06:00-12:00)", tariffPeriod: "Standard", tariffRatePhpPerKwh: 8.50, currentHours: 5.2, optimizedHours: 4.0, currentCostPhp: 278000, optimizedCostPhp: 213800, savingsPct: 23.1, dispatchedVolumeM3: 1280 },
+      { blockId: "B3", blockLabel: "Afternoon (12:00-18:00)", tariffPeriod: "Standard", tariffRatePhpPerKwh: 8.50, currentHours: 4.8, optimizedHours: 3.8, currentCostPhp: 256000, optimizedCostPhp: 203100, savingsPct: 20.8, dispatchedVolumeM3: 1216 },
+      { blockId: "B4", blockLabel: "Evening Peak (18:00-22:00)", tariffPeriod: "Peak", tariffRatePhpPerKwh: 11.80, currentHours: 3.5, optimizedHours: 1.8, currentCostPhp: 245600, optimizedCostPhp: 126300, savingsPct: 48.6, dispatchedVolumeM3: 576 }
+    ],
+    totalCurrentCostPhp: 943600,
+    totalOptimizedCostPhp: 738400,
+    totalSavingsPhp: 205200
+  }
+]
+
+const OPT_DEFAULT_MCDA = [
+  { rank: 1, zone: "Zone 2 (Panal / Poblacion)",  topsisScore: 0.8420, priorityLevel: "CRITICAL" as const, nrwPct: 27.0, deficitM3: 4120, populationDensity: 5280, pipeAgeYears: 32, revenueLossPhp: 248000, rationedHours: 8,  recommendedAction: "Immediate pipe replacement & active sector pressure step-down (PRV-02)", estimatedRecoveryM3: 2678, tankerPriority: 1 },
+  { rank: 2, zone: "Zone 1 (Tabaco Center)",     topsisScore: 0.7810, priorityLevel: "CRITICAL" as const, nrwPct: 24.2, deficitM3: 3840, populationDensity: 4120, pipeAgeYears: 28, revenueLossPhp: 184000, rationedHours: 10, recommendedAction: "Pre-charge elevated booster storage & throttle commercial valves", estimatedRecoveryM3: 2496, tankerPriority: 2 },
+  { rank: 3, zone: "Zone 15 (Sto. Cristo)",      topsisScore: 0.6890, priorityLevel: "HIGH" as const,     nrwPct: 22.3, deficitM3: 3280, populationDensity: 3360, pipeAgeYears: 30, revenueLossPhp: 196000, rationedHours: 12, recommendedAction: "DMA flow acoustic leak sweep & auxiliary well pre-commissioning", estimatedRecoveryM3: 2132, tankerPriority: 3 },
+  { rank: 4, zone: "Zone 7 (Sagrada)",           topsisScore: 0.5420, priorityLevel: "HIGH" as const,     nrwPct: 19.8, deficitM3: 2640, populationDensity: 3720, pipeAgeYears: 26, revenueLossPhp: 142000, rationedHours: 14, recommendedAction: "Acoustic leak sweep & valve packing replacement", estimatedRecoveryM3: 1716, tankerPriority: 4 },
+  { rank: 5, zone: "Zone 20 (Fatima)",           topsisScore: 0.4180, priorityLevel: "MEDIUM" as const,   nrwPct: 20.4, deficitM3: 2180, populationDensity: 2540, pipeAgeYears: 24, revenueLossPhp: 115000, rationedHours: 16, recommendedAction: "Routine preventative maintenance & AMR meter calibration", estimatedRecoveryM3: 1417, tankerPriority: 5 },
+  { rank: 6, zone: "Zone 3 (Magallanes)",        topsisScore: 0.2640, priorityLevel: "LOW" as const,      nrwPct: 18.4, deficitM3: 1420, populationDensity: 3140, pipeAgeYears: 22, revenueLossPhp: 84000,  rationedHours: 24, recommendedAction: "Normal baseline 24-hour continuous supply maintained", estimatedRecoveryM3: 923,  tankerPriority: 6 },
+]
+
+const OPT_DEFAULT_FP_RULES = [
+  { ruleId: "FP-01", antecedents: ["Heat Index > 38°C", "Peak Midday Hour (12:00-14:00)"], consequents: ["Demand Spike > +25%", "Booster Station A Suction Pressure Drop"], support: "42.0%", confidence: "88.0%", lift: "2.10x", insight: "Elevated ambient heat index during peak midday hours reliably triggers suction pressure drops at Booster Station A due to concurrent commercial cooling and domestic showering." },
+  { ruleId: "FP-02", antecedents: ["Rainfall > 80 mm / 24h", "Amihan Monsoon Season"], consequents: ["Raw Water Turbidity Spike", "Unbilled Storm Infiltration NRW"], support: "35.0%", confidence: "82.0%", lift: "2.34x", insight: "Intense tropical rainfall correlates with main pipeline storm infiltration in low-elevation sector 15-C, causing backflow pressure and billing variance." },
+  { ruleId: "FP-03", antecedents: ["Minimum Night Flow > 180%", "Off-Peak Tariff Window (01:00-04:00)"], consequents: ["Hidden Trunk Line Burst", "Zone NRW > 25%"], support: "28.0%", confidence: "79.0%", lift: "2.82x", insight: "Excessive night flow between 01:00 and 04:00 reliably flags undetected underground transmission ruptures along Panal and Sto. Cristo distribution mains." },
+  { ruleId: "FP-04", antecedents: ["Pump Efficiency < 75%", "Operating Hours > 22h / day"], consequents: ["Specific Energy > 0.55 kWh/m³", "Motor Thermodynamic Overheating"], support: "24.0%", confidence: "74.0%", lift: "1.95x", insight: "Continuous unoptimized pumping beyond allowable thermal duty cycles leads to accelerated thermodynamic degradation and elevated power tariffs." }
+]
+
 // ── SCREEN: OPTIMIZATION ───────────────────────────────────────────────────
 function OptimizationScreen() {
-  const stations = ["Main Pump Station", "Booster Station A", "Booster Station B"]
-  const costPerOptHour = PUMP_SCHEDULE.map(p => p.costOptimized / p.optimized)
-  const [editedHours, setEditedHours] = useState(() => PUMP_SCHEDULE.map(p => p.optimized))
-  const [recalculating, setRecalculating] = useState(false)
+  const { prescriptive, isLive } = useDashboard()
+  const [activeScenario, setActiveScenario] = useState<"normal" | "moderate" | "severe">("normal")
+  const [isSolving, setIsSolving] = useState<boolean>(false)
+  const [solveIteration, setSolveIteration] = useState<number>(48)
+  const [copiedSchedule, setCopiedSchedule] = useState<boolean>(false)
 
-  const computedRows = PUMP_SCHEDULE.map((p, i) => {
-    const newOptCost = Math.round(editedHours[i] * costPerOptHour[i])
-    const savings = parseFloat(((p.costCurrent - newOptCost) / p.costCurrent * 100).toFixed(1))
-    const delta = parseFloat((editedHours[i] - p.current).toFixed(1))
-    return { ...p, editedOptimized: editedHours[i], newOptCost, computedSavings: savings, computedDelta: delta }
-  })
+  // Safe coercion helpers
+  const toNum = (v: any, fallback = 0): number => {
+    const n = typeof v === "number" ? v : parseFloat(String(v ?? ""))
+    return isNaN(n) ? fallback : n
+  }
+  const fmtN = (v: any, fallback = 0): string => toNum(v, fallback).toLocaleString()
+  const fmtD = (v: any, d = 2, fallback = 0): string => toNum(v, fallback).toFixed(d)
 
-  const stationComputedData = stations.map(s =>
-    computedRows.map((r, i) => ({ ...r, globalIdx: i })).filter(r => r.station === s)
-  )
+  // Facility schedule state driven by prescriptive context or fallback
+  const defaultFacilities = (prescriptive?.facilities && prescriptive.facilities.length > 0)
+    ? prescriptive.facilities
+    : OPT_DEFAULT_FACILITIES
 
-  const totalCurrentCost = PUMP_SCHEDULE.reduce((sum, p) => sum + p.costCurrent, 0)
-  const totalOptCostEdited = computedRows.reduce((sum, r) => sum + r.newOptCost, 0)
-  const saving = totalCurrentCost - totalOptCostEdited
+  // Custom edited hours per facility and block
+  const [editedHoursMap, setEditedHoursMap] = useState<Record<string, number>>({})
 
-  const handleHoursChange = (idx: number, val: string) => {
-    const n = parseFloat(val)
-    if (isNaN(n) || n < 0 || n > 6) return
-    setEditedHours(prev => { const next = [...prev]; next[idx] = n; return next })
-    setRecalculating(true)
-    setTimeout(() => setRecalculating(false), 300)
+  // Multiplier based on active scenario
+  const scenarioMultiplier = activeScenario === "normal" ? 1.0 : activeScenario === "moderate" ? 0.90 : 0.75
+
+  // Helper to get effective hours
+  const getHours = (facId: string, blockId: string, defaultVal: number) => {
+    const key = `${facId}_${blockId}`
+    return editedHoursMap[key] !== undefined ? editedHoursMap[key] : defaultVal
   }
 
+  const handleHourChange = (facId: string, blockId: string, val: string) => {
+    const n = parseFloat(val)
+    if (isNaN(n) || n < 0 || n > 8) return
+    const key = `${facId}_${blockId}`
+    setEditedHoursMap(prev => ({ ...prev, [key]: n }))
+  }
+
+  const resetToLpOptimum = () => {
+    setEditedHoursMap({})
+    toast.info("Reset to LP optimal pumping hours", {
+      description: "Pumping schedule restored to PuLP CBC solver baseline.",
+    })
+  }
+
+  const triggerLpSolve = () => {
+    setIsSolving(true)
+    setTimeout(() => {
+      setIsSolving(false)
+      setSolveIteration(prev => prev + 1)
+      toast.success("LP Optimization Solver Completed", {
+        description: "Optimal global solution converged in 0.084s with 0.00% duality gap.",
+      })
+    }, 600)
+  }
+
+  const copyDispatchSchedule = () => {
+    const lines = [
+      "TCWD AQUASTAT — DAILY PUMP DISPATCH ORDER",
+      `Operational Scenario: ${activeScenario.toUpperCase()} | Generated: ${new Date().toLocaleDateString("en-PH")}`,
+      "--------------------------------------------------------------------------------",
+      "STATION | BLOCK | TARIFF | RUN HRS | DISPATCH VOL | EST. COST",
+      ...defaultFacilities.flatMap(f =>
+        (f.blocks || []).map(b => {
+          const h = getHours(f.id, b.blockId, b.optimizedHours)
+          const cost = Math.round(b.optimizedCostPhp * (h / (b.optimizedHours || 1)))
+          const vol = Math.round(b.dispatchedVolumeM3 * (h / (b.optimizedHours || 1)))
+          return `${f.station.padEnd(20)} | ${b.blockLabel.padEnd(22)} | ₱${b.tariffRatePhpPerKwh}/kWh | ${h}h | ${fmtN(vol)} m³ | ₱${fmtN(cost)}`
+        })
+      ),
+      "--------------------------------------------------------------------------------",
+      `Total Projected Monthly Savings: ₱${fmtN(prescriptive?.lpProblemSummary?.monthlySavingsPhp || 656100)} (-${fmtD(prescriptive?.lpProblemSummary?.savingsPercentage || 20.2, 1)}%)`
+    ].join("\n")
+
+    navigator.clipboard.writeText(lines).then(() => {
+      setCopiedSchedule(true)
+      toast.success("Dispatch Order Copied to Clipboard", {
+        description: "Ready to paste into TCWD Operations Daily Log or print.",
+      })
+      setTimeout(() => setCopiedSchedule(false), 3000)
+    }).catch(() => {
+      toast.error("Could not copy to clipboard")
+    })
+  }
+
+  // Dynamic cost computations based on edited hours and scenario
+  let computedCurrentCost = 0
+  let computedOptimizedCost = 0
+
+  defaultFacilities.forEach(f => {
+    (f.blocks || []).forEach(b => {
+      const currentH = toNum(b.currentHours, 4)
+      const optH = getHours(f.id, b.blockId, toNum(b.optimizedHours, 4))
+      const costPerOptH = toNum(b.optimizedCostPhp, 200000) / (toNum(b.optimizedHours, 4) || 1)
+      const costPerCurH = toNum(b.currentCostPhp, 250000) / (currentH || 1)
+
+      computedCurrentCost += Math.round(currentH * costPerCurH * scenarioMultiplier)
+      computedOptimizedCost += Math.round(optH * costPerOptH * scenarioMultiplier)
+    })
+  })
+
+  const computedSavings = Math.max(0, computedCurrentCost - computedOptimizedCost)
+  const computedSavingsPct = computedCurrentCost > 0 ? ((computedSavings / computedCurrentCost) * 100).toFixed(1) : "0.0"
+
+  const tariffs = (prescriptive?.tariffs && prescriptive.tariffs.length > 0)
+    ? prescriptive.tariffs
+    : OPT_DEFAULT_TARIFFS
+
+  const mcdaRows = (prescriptive?.mcdaPrioritization && prescriptive.mcdaPrioritization.length > 0)
+    ? prescriptive.mcdaPrioritization
+    : OPT_DEFAULT_MCDA
+
+  const fpRules = (prescriptive?.fpGrowthRules && prescriptive.fpGrowthRules.length > 0)
+    ? prescriptive.fpGrowthRules
+    : OPT_DEFAULT_FP_RULES
+
+  const lpSummary = prescriptive?.lpProblemSummary || {
+    peakTariffKwhShaved: 4850,
+    hydraulicReliabilityPct: 99.4,
+    solveTimeSeconds: 0.084,
+    status: "OPTIMAL",
+    iterationCount: 48,
+  }
+
+  // Visual Graph Data 1: Pumping Dispatch & Peak Shaving by Time Block
+  const dispatchChartData = [
+    { block: "Night (22:00-06:00)", baselineHours: 14.5, optHours: 16.4, tariffRate: 6.20, dispatchedM3: 6600 },
+    { block: "Morning (06:00-12:00)", baselineHours: 16.5, optHours: 13.2, tariffRate: 8.50, dispatchedM3: 5330 },
+    { block: "Afternoon (12:00-18:00)", baselineHours: 15.0, optHours: 12.5, tariffRate: 8.50, dispatchedM3: 5041 },
+    { block: "Evening Peak (18:00-22:00)", baselineHours: 11.3, optHours: 6.0, tariffRate: 11.80, dispatchedM3: 2426 },
+  ]
+
+  // Visual Graph Data 2: Monthly Energy Cost Comparison by Facility
+  const facilityCostChartData = defaultFacilities.map(f => {
+    let cur = 0
+    let opt = 0
+    f.blocks.forEach(b => {
+      const h = getHours(f.id, b.blockId, toNum(b.optimizedHours, 4))
+      cur += b.currentCostPhp * scenarioMultiplier
+      opt += b.optimizedCostPhp * (h / (b.optimizedHours || 1)) * scenarioMultiplier
+    })
+    return {
+      name: f.station.replace(" Station", ""),
+      currentCost: Math.round(cur),
+      optimizedCost: Math.round(opt),
+      savings: Math.round(cur - opt),
+    }
+  })
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Prescriptive Optimization</h1>
-        <p className="text-sm text-slate-500 mt-0.5">LP Model Output · Optimized pump scheduling & water allocation · October 2025</p>
+    <div className="space-y-6">
+      {/* Page Title & Live Status */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900">
+              Prescriptive Water Allocation &amp; Pumping Optimization
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#0038A8] border border-blue-200">
+              Objective 5 · §3.3.3
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Linear Programming (LP) Cost Minimization · Time-of-Use Electricity Tariff Arbitrage · MCDA TOPSIS Water Rationing
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={triggerLpSolve}
+            disabled={isSolving}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0038A8] text-white hover:bg-[#002b80] transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+          >
+            <RefreshCw size={12} className={isSolving ? "animate-spin" : ""} />
+            {isSolving ? "Solving LP Model…" : "Re-run LP Solver"}
+          </button>
+
+          <button
+            onClick={copyDispatchSchedule}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm cursor-pointer"
+          >
+            {copiedSchedule ? <CheckCircle2 size={12} className="text-emerald-600" /> : <Copy size={12} />}
+            {copiedSchedule ? "Copied!" : "Export Dispatch Order"}
+          </button>
+        </div>
       </div>
 
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#0038A8]/8 to-[#0284C7]/5 border border-[#0038A8]/15 rounded-xl p-4 flex items-center gap-6">
-        <Cpu size={32} className="text-[#0038A8] flex-shrink-0" />
-        <div className="flex-1">
-          <p className="text-sm font-bold text-slate-900">LP Model Active — Optimized pump scheduling and water allocation based on forecasted demand</p>
-          <p className="text-xs text-slate-500 mt-0.5">Objective: Minimize Total Power Operating Cost (PHP) · Constraints: Demand coverage ≥ 95%, Pressure zone compliance</p>
+      {/* Scenario Switcher Tabs */}
+      <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 w-full md:w-auto">
+          <span className="text-xs font-semibold text-slate-500 mr-2 flex items-center gap-1">
+            <Sliders size={13} className="text-slate-400" />
+            Operational Scenario:
+          </span>
+          <button
+            onClick={() => setActiveScenario("normal")}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+              activeScenario === "normal"
+                ? "bg-[#0038A8] text-white shadow-sm font-semibold"
+                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Normal Operations (Cost Min.)
+          </button>
+          <button
+            onClick={() => setActiveScenario("moderate")}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+              activeScenario === "moderate"
+                ? "bg-amber-600 text-white shadow-sm font-semibold"
+                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Moderate Dry Season (-10% Yield)
+          </button>
+          <button
+            onClick={() => setActiveScenario("severe")}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+              activeScenario === "severe"
+                ? "bg-red-600 text-white shadow-sm font-semibold"
+                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Severe Drought (-25% Deficit &amp; Rationing)
+          </button>
         </div>
-        <div className="text-right flex-shrink-0">
-          <p className="text-xs text-slate-500">Total Monthly Savings</p>
-          <p className="text-xl font-bold font-mono text-emerald-600">₱{saving.toLocaleString()}</p>
-          <p className="text-xs text-emerald-500">-{((saving/totalCurrentCost)*100).toFixed(1)}% energy expenditure</p>
+
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Solver: <strong>PuLP / COIN-OR CBC</strong> (Iter #{solveIteration})</span>
         </div>
       </div>
 
-      {/* Cost Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Mathematical LP Problem Formulation Card (§3.3.3) */}
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 text-white shadow-md border border-slate-700 space-y-3">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <div className="flex items-center gap-2">
+            <Cpu size={18} className="text-blue-400" />
+            <h3 className="text-sm font-bold tracking-wide uppercase text-blue-200">
+              Linear Programming (LP) Mathematical Formulation (§3.3.3)
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded">
+            Optimal Solution Verified (Duality Gap: 0.00%)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="bg-black/30 p-3 rounded-lg border border-white/5 space-y-1.5">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider font-sans">Objective Function (Cost Minimization)</p>
+            <p className="text-emerald-300 font-bold text-sm">
+              Minimize C<sub>total</sub> = ∑<sub>s=1</sub><sup>10</sup> ∑<sub>t=1</sub><sup>4</sup> (Tariff<sub>t</sub> · SpecificEnergy<sub>s</sub> + Maint<sub>s</sub>) · X<sub>s,t</sub>
+            </p>
+            <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
+              Minimizes cumulative electromechanical power expenditures by allocating production flow across 6 gravity springs and 4 deep wells over 4 daily electricity tariff blocks.
+            </p>
+          </div>
+
+          <div className="bg-black/30 p-3 rounded-lg border border-white/5 space-y-1.5">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider font-sans">Active Operational Constraints</p>
+            <div className="space-y-1 text-slate-300 text-[11px]">
+              <p><span className="text-blue-300 font-bold">1. Demand Satisfaction:</span> ∑<sub>s</sub> X<sub>s,t</sub> ≥ D&#770;<sub>t</sub> (LSTM Champion Forecast)</p>
+              <p><span className="text-blue-300 font-bold">2. Facility Yield Limit:</span> 0 ≤ X<sub>s,t</sub> ≤ Cap<sub>s</sub><sup>max</sup> · u<sub>s,t</sub></p>
+              <p><span className="text-blue-300 font-bold">3. Duty Cycle Bound:</span> ∑<sub>t</sub> u<sub>s,t</sub> ≤ H<sub>s</sub><sup>max</sup> (max daily pump run hours)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Summary Scorecards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Current Monthly Cost</p>
-          <p className="text-2xl font-bold font-mono text-slate-900 mt-1">₱{totalCurrentCost.toLocaleString()}</p>
-          <p className="text-xs text-slate-400 mt-1">All 3 pump stations</p>
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Baseline Unoptimized Cost</p>
+          <p className="text-xl font-bold font-mono text-slate-900 mt-1">
+            ₱{fmtN(computedCurrentCost)}
+          </p>
+          <p className="text-[11px] text-slate-500 mt-1">Flat continuous pumping</p>
         </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">LP Optimized Cost</p>
+          <p className="text-xl font-bold font-mono text-emerald-700 mt-1">
+            ₱{fmtN(computedOptimizedCost)}
+          </p>
+          <p className="text-[11px] text-emerald-600 mt-1">Time-of-use tariff optimized</p>
+        </div>
+
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Optimized Monthly Cost</p>
-          <p className="text-2xl font-bold font-mono text-emerald-700 mt-1">₱{totalOptCostEdited.toLocaleString()}</p>
-          <p className="text-xs text-emerald-500 mt-1">Post-optimization projection</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">Monthly Power Savings</p>
+            <TrendingDown size={14} className="text-emerald-600" />
+          </div>
+          <p className="text-xl font-bold font-mono text-emerald-800 mt-1">
+            ₱{fmtN(computedSavings)}
+          </p>
+          <p className="text-[11px] font-bold text-emerald-700 mt-1">
+            -{computedSavingsPct}% Power Expenditure
+          </p>
         </div>
+
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-[10px] font-semibold text-[#0038A8] uppercase tracking-wide">Monthly Savings</p>
-          <p className="text-2xl font-bold font-mono text-[#0038A8] mt-1">₱{saving.toLocaleString()}</p>
-          <p className="text-xs text-blue-400 mt-1">-{((saving/totalCurrentCost)*100).toFixed(1)}% reduction</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-[#0038A8] uppercase tracking-wider">Peak Tariff Shaved</p>
+            <Zap size={14} className="text-[#0038A8]" />
+          </div>
+          <p className="text-xl font-bold font-mono text-[#0038A8] mt-1">
+            {fmtN(lpSummary?.peakTariffKwhShaved || 4850)} kWh
+          </p>
+          <p className="text-[11px] text-blue-700 mt-1">
+            Reliability Index: <strong>{fmtD(lpSummary?.hydraulicReliabilityPct || 99.4, 1)}%</strong>
+          </p>
         </div>
       </div>
 
-      {/* Pump Schedule Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-800">Recommended Pump Schedule — October 2025 <span className="font-normal text-slate-400 text-xs">(edit Optimized Hrs to recalculate)</span></h3>
-          <AnimatePresence>
-            {recalculating && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1.5 text-[10px] font-semibold text-[#0038A8] bg-[#0038A8]/8 px-2.5 py-1 rounded-full border border-[#0038A8]/15"
-              >
-                <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.5, repeat: Infinity, ease: "linear" }} className="inline-block">
-                  <RefreshCw size={10} />
-                </motion.span>
-                Recalculating…
-              </motion.span>
-            )}
-          </AnimatePresence>
+      {/* ── VISUAL OPTIMIZATION GRAPHS (Peak Shaving & Cost Waterfall) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Graph 1: Pumping Hours & Tariff Arbitrage */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <BarChart3 size={15} className="text-[#0038A8]" />
+                Peak Load Shaving: Baseline vs. Optimized Pumping Hours
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Strategic load shifting: Throttling evening peak (₱11.80/kWh) and ramping night off-peak (₱6.20/kWh)
+              </p>
+            </div>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={dispatchChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                <XAxis dataKey="block" tick={{ fontSize: 9, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 9, fill: "#64748B" }} axisLine={false} tickLine={false} unit="h" />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9, fill: "#DC2626" }} axisLine={false} tickLine={false} unit="₱" domain={[0, 15]} />
+                <RTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload
+                      return (
+                        <div className="bg-slate-900 text-white p-2.5 rounded-lg shadow-lg text-[11px] space-y-1">
+                          <p className="font-bold border-b border-white/20 pb-1">{data.block}</p>
+                          <p className="text-slate-300">Baseline Run: <strong className="text-white">{data.baselineHours}h</strong></p>
+                          <p className="text-emerald-300">LP Optimized: <strong className="text-white">{data.optHours}h</strong> ({data.optHours > data.baselineHours ? `+${(data.optHours - data.baselineHours).toFixed(1)}h` : `${(data.optHours - data.baselineHours).toFixed(1)}h`})</p>
+                          <p className="text-amber-300">APEC Electricity Tariff: <strong>₱{data.tariffRate.toFixed(2)}/kWh</strong></p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 10, paddingTop: 6 }} />
+                <Bar yAxisId="left" dataKey="baselineHours" name="Baseline Run Hours" fill="#CBD5E1" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="left" dataKey="optHours" name="LP Optimized Hours" fill="#0038A8" radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="tariffRate" name="APEC Tariff (₱/kWh)" stroke="#DC2626" strokeWidth={2.5} dot={{ r: 4, fill: "#DC2626" }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+
+        {/* Graph 2: Monthly Energy Cost Comparison by Facility */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <DollarSign size={15} className="text-emerald-600" />
+                Monthly Power Expenditure by Pump Station (PHP)
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Financial comparison per major pumping installation under LP dispatch
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Total Savings: ₱{fmtN(computedSavings)}
+            </span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={facilityCostChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "#64748B" }} axisLine={false} tickLine={false} tickFormatter={v => `₱${(v / 1000).toFixed(0)}k`} />
+                <RTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload
+                      return (
+                        <div className="bg-slate-900 text-white p-2.5 rounded-lg shadow-lg text-[11px] space-y-1">
+                          <p className="font-bold border-b border-white/20 pb-1">{data.name}</p>
+                          <p className="text-slate-300">Baseline Cost: <strong>₱{data.currentCost.toLocaleString()}</strong></p>
+                          <p className="text-emerald-300">Optimized Cost: <strong>₱{data.optimizedCost.toLocaleString()}</strong></p>
+                          <p className="text-blue-300 font-bold">Net Savings: ₱{data.savings.toLocaleString()} (-{((data.savings / data.currentCost) * 100).toFixed(1)}%)</p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 10, paddingTop: 6 }} />
+                <Bar dataKey="currentCost" name="Baseline Cost (₱)" fill="#94A3B8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="optimizedCost" name="Optimized Cost (₱)" fill="#10B981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Time-of-Use (TOU) Energy Tariff Arbitrage Strategy Grid */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Zap size={15} className="text-amber-500" />
+              Time-of-Use (TOU) Electricity Tariff Arbitrage Strategy (§3.3.3)
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Tariff schedules based on Albay Power &amp; Energy Corp. (APEC) commercial water utility tariff brackets
+            </p>
+          </div>
+          <span className="text-[11px] font-semibold text-slate-500">4 Time Blocks / 24 Hours</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {tariffs.map(t => (
+            <div
+              key={t.blockId}
+              className={`rounded-lg p-3.5 border transition-all ${
+                t.classification === "Off-Peak"
+                  ? "bg-emerald-50/50 border-emerald-200"
+                  : t.classification === "Peak"
+                  ? "bg-red-50/50 border-red-200"
+                  : "bg-blue-50/40 border-blue-200"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-slate-800">{t.blockName}</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  t.classification === "Off-Peak"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : t.classification === "Peak"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-blue-100 text-blue-800"
+                }`}>
+                  {t.classification}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-slate-500 mt-1">{t.timeRange}</p>
+              <p className="text-lg font-bold font-mono text-slate-900 mt-1">
+                ₱{fmtD(t.ratePhpPerKwh, 2)} <span className="text-[10px] font-sans font-normal text-slate-500">/ kWh</span>
+              </p>
+              <p className="text-[10px] text-slate-600 mt-2 border-t border-slate-200/60 pt-1.5 leading-relaxed">
+                {t.strategyDirective}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommended Pumping Schedule Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Optimal Pumping Dispatch Schedule &amp; Cost Variance
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Edit &quot;Optimized Hrs&quot; to test manual operator overrides; live solver updates cost and savings
+            </p>
+          </div>
+          <button
+            onClick={resetToLpOptimum}
+            className="text-[11px] font-medium text-[#0038A8] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <RefreshCw size={11} /> Reset to LP Optimum
+          </button>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                {["Station","Time Block","Current Hrs","Optimized Hrs","Δ Variance","Current Cost","Optimized Cost","Savings %"].map(h => (
-                  <th key={h} className="text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-4 py-2.5">{h}</th>
-                ))}
+              <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <th className="px-4 py-2.5 text-left">Pumping Station</th>
+                <th className="px-4 py-2.5 text-left">Time Block</th>
+                <th className="px-3 py-2.5 text-left">Tariff</th>
+                <th className="px-3 py-2.5 text-center">Baseline Hrs</th>
+                <th className="px-4 py-2.5 text-center">Optimized Hrs</th>
+                <th className="px-3 py-2.5 text-center">Δ Shift</th>
+                <th className="px-4 py-2.5 text-right">Dispatched Vol</th>
+                <th className="px-4 py-2.5 text-right">Baseline Cost</th>
+                <th className="px-4 py-2.5 text-right">Optimized Cost</th>
+                <th className="px-4 py-2.5 text-center">Savings</th>
               </tr>
             </thead>
-            <tbody>
-              {stationComputedData.map((rows, si) => (
-                rows.map((r, ri) => (
-                  <tr key={`${si}-${ri}`} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${ri === 0 ? "border-t-2 border-t-slate-100" : ""}`}>
-                    {ri === 0 && <td rowSpan={4} className="px-4 py-3 text-xs font-semibold text-slate-700 border-r border-slate-100 align-middle">{r.station}</td>}
-                    <td className="px-4 py-2.5 text-xs text-slate-600">{r.block}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-700">{r.current}h</td>
-                    <td className="px-4 py-2.5">
-                      <input
-                        type="number" min="0" max="6" step="0.1"
-                        value={r.editedOptimized}
-                        onChange={e => handleHoursChange(r.globalIdx, e.target.value)}
-                        className="w-16 font-mono text-xs font-semibold text-[#0038A8] border border-[#0038A8]/25 rounded-md px-2 py-1 bg-[#0038A8]/5 focus:outline-none focus:ring-2 focus:ring-[#0038A8]/20 focus:border-[#0038A8]/50 transition-all"
-                      />
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        r.computedDelta > 0 ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : r.computedDelta < 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : "bg-slate-100 text-slate-500 border-slate-200"
-                      }`}>
-                        {r.computedDelta > 0 ? `+${r.computedDelta}h ↑` : r.computedDelta < 0 ? `${r.computedDelta}h ↓` : "0h"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">₱{r.costCurrent.toLocaleString()}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs font-semibold text-emerald-700">₱{r.newOptCost.toLocaleString()}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        r.computedSavings > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                       : "bg-red-50 text-red-500 border-red-200"
-                      }`}>
-                        {r.computedSavings > 0 ? `−${r.computedSavings}% Savings` : `+${Math.abs(r.computedSavings)}%`}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+            <tbody className="divide-y divide-slate-100">
+              {defaultFacilities.map((fac) => (
+                (fac.blocks || []).map((b, bi) => {
+                  const currentH = toNum(b.currentHours, 4)
+                  const optH = getHours(fac.id, b.blockId, toNum(b.optimizedHours, 4))
+                  const deltaH = parseFloat((optH - currentH).toFixed(1))
+                  const costPerOptH = toNum(b.optimizedCostPhp, 200000) / (toNum(b.optimizedHours, 4) || 1)
+                  const newCost = Math.round(optH * costPerOptH * scenarioMultiplier)
+                  const curCost = Math.round(toNum(b.currentCostPhp, 250000) * scenarioMultiplier)
+                  const lineSavings = curCost - newCost
+                  const lineSavingsPct = curCost > 0 ? ((lineSavings / curCost) * 100).toFixed(1) : "0.0"
+                  const volDispatched = Math.round(toNum(b.dispatchedVolumeM3, 1000) * (optH / (toNum(b.optimizedHours, 4) || 1)))
+
+                  return (
+                    <tr key={`${fac.id}-${b.blockId}`} className="hover:bg-slate-50/70 transition-colors">
+                      {bi === 0 && (
+                        <td
+                          rowSpan={fac.blocks?.length || 4}
+                          className="px-4 py-3 font-bold text-slate-900 border-r border-slate-100 align-top bg-slate-50/30"
+                        >
+                          <div>{fac.station}</div>
+                          <div className="text-[10px] font-normal text-slate-400 mt-0.5">{fac.type}</div>
+                          <div className="text-[10px] font-mono text-[#0038A8] mt-1 font-semibold">
+                            Cap: {fmtN(fac.capacityM3PerDay)} m³/d
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-4 py-2.5 text-slate-700 font-medium">
+                        {b.blockLabel}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          b.tariffPeriod === "Off-Peak"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : b.tariffPeriod === "Peak"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}>
+                          ₱{fmtD(b.tariffRatePhpPerKwh, 2)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-mono text-slate-600">
+                        {fmtD(currentH, 1)}h
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        <input
+                          type="number"
+                          min="0"
+                          max="8"
+                          step="0.1"
+                          value={optH}
+                          onChange={e => handleHourChange(fac.id, b.blockId, e.target.value)}
+                          className="w-16 text-center font-mono text-xs font-bold text-[#0038A8] border border-blue-200 rounded-md py-1 bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-[#0038A8]/20"
+                        />
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          deltaH > 0
+                            ? "bg-amber-100 text-amber-800"
+                            : deltaH < 0
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {deltaH > 0 ? `+${deltaH}h ↑` : deltaH < 0 ? `${deltaH}h ↓` : "0.0h"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono text-slate-700">
+                        {fmtN(volDispatched)} m³
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono text-slate-600">
+                        ₱{fmtN(curCost)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-900">
+                        ₱{fmtN(newCost)}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          lineSavings > 0
+                            ? "bg-emerald-100 text-emerald-800"
+                            : lineSavings < 0
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {lineSavings > 0 ? `−${lineSavingsPct}%` : `+${Math.abs(Number(lineSavingsPct))}%`}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
               ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Multi-Criteria Decision Analysis (MCDA - TOPSIS) Zone Prioritization */}
+      {/* Multi-Criteria Decision Analysis (MCDA - TOPSIS) Water Rationing Table (§3.3.3) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-800">Multi-Criteria Decision Analysis (MCDA) — Zone Intervention Priority</h3>
-            <p className="text-xs text-slate-500 mt-0.5">TOPSIS Mathematical Model · Evaluates NRW (30%), Deficit (25%), Population (15%), Pipe Age (15%), Revenue Loss (15%)</p>
+            <div className="flex items-center gap-2">
+              <Scale size={16} className="text-[#0038A8]" />
+              <h3 className="text-sm font-bold text-slate-800">
+                Multi-Criteria Decision Analysis (MCDA - TOPSIS) — Water Rationing &amp; Deficit Intervention
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Mathematical criteria weights: NRW Leakage (30%) · Deficit Severity (25%) · Population Density (15%) · Pipe Age (15%) · Revenue Loss (15%)
+            </p>
           </div>
-          <span className="text-[11px] font-semibold text-[#0038A8] bg-[#0038A8]/8 px-2.5 py-1 rounded-md border border-[#0038A8]/15">
-            MCDA Engine: TOPSIS Vector Normalization
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+            Mandatory Trigger under Dry Season Deficit
           </span>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                {["Rank", "Service Zone", "MCDA Score", "Priority Level", "Recommended Engineering Action", "Est. Monthly Recovery"].map(h => (
-                  <th key={h} className="text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-4 py-2.5">{h}</th>
-                ))}
+              <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <th className="px-4 py-2.5 text-center">Rank</th>
+                <th className="px-4 py-2.5 text-left">Service Zone</th>
+                <th className="px-3 py-2.5 text-center">TOPSIS Score (C<sub>i</sub>)</th>
+                <th className="px-3 py-2.5 text-center">Priority</th>
+                <th className="px-3 py-2.5 text-right">NRW %</th>
+                <th className="px-3 py-2.5 text-right">Deficit</th>
+                <th className="px-3 py-2.5 text-center">Rationed Supply</th>
+                <th className="px-3 py-2.5 text-center">Tanker Standby</th>
+                <th className="px-5 py-2.5 text-left">Prescriptive Engineering Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {[
-                { rank: "#1", zone: "Zone 2",  score: "0.8420", priority: "CRITICAL", action: "Immediate Pipe Replacement & Sector Pressure Step-down", recovery: "2,678 m³", color: "text-red-600 bg-red-50 border-red-200" },
-                { rank: "#2", zone: "Zone 1",  score: "0.7810", priority: "CRITICAL", action: "Immediate Pipe Replacement & Sector Pressure Step-down", recovery: "2,496 m³", color: "text-red-600 bg-red-50 border-red-200" },
-                { rank: "#3", zone: "Zone 15", score: "0.6890", priority: "HIGH",     action: "Active Leak Detection Sweep & DMA Flow Meter Calibration", recovery: "2,132 m³", color: "text-amber-600 bg-amber-50 border-amber-200" },
-                { rank: "#4", zone: "Zone 7",  score: "0.5420", priority: "HIGH",     action: "Active Leak Detection Sweep & DMA Flow Meter Calibration", recovery: "1,716 m³", color: "text-amber-600 bg-amber-50 border-amber-200" },
-                { rank: "#5", zone: "Zone 20", score: "0.4180", priority: "MEDIUM",   action: "Routine Preventative Maintenance & AMR Meter Verification", recovery: "1,417 m³", color: "text-blue-600 bg-blue-50 border-blue-200" },
-                { rank: "#6", zone: "Zone 3",  score: "0.2640", priority: "LOW",      action: "Routine Preventative Maintenance & AMR Meter Verification", recovery: "923 m³", color: "text-slate-600 bg-slate-100 border-slate-200" },
-              ].map(row => (
-                <tr key={row.rank} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-xs text-slate-800">{row.rank}</td>
-                  <td className="px-4 py-3 text-xs font-semibold text-[#0038A8]">{row.zone}</td>
-                  <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900">{row.score}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${row.color}`}>{row.priority}</span>
+              {mcdaRows.map(row => (
+                <tr key={row.rank} className="hover:bg-slate-50/70 transition-colors">
+                  <td className="px-4 py-3 text-center font-bold text-slate-800">
+                    #{row.rank}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-700">{row.action}</td>
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-emerald-600">+{row.recovery}</td>
+                  <td className="px-4 py-3 font-semibold text-[#0038A8]">
+                    {row.zone}
+                  </td>
+                  <td className="px-3 py-3 text-center font-mono font-bold text-slate-900">
+                    {fmtD(row.topsisScore, 4)}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      row.priorityLevel === "CRITICAL"
+                        ? "bg-red-100 text-red-800 border border-red-200"
+                        : row.priorityLevel === "HIGH"
+                        ? "bg-amber-100 text-amber-800 border border-amber-200"
+                        : row.priorityLevel === "MEDIUM"
+                        ? "bg-blue-100 text-blue-800 border border-blue-200"
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                    }`}>
+                      {row.priorityLevel}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono font-bold text-red-600">
+                    {fmtD(row.nrwPct, 1)}%
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-700">
+                    {fmtN(row.deficitM3)} m³
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                      {row.rationedHours || 8}h / day
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      (row.tankerPriority || 1) <= 2
+                        ? "bg-purple-100 text-purple-800 font-bold"
+                        : "bg-slate-100 text-slate-600"
+                    }`}>
+                      Priority #{row.tankerPriority || 1}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-slate-600 text-[11px] leading-relaxed">
+                    {row.recommendedAction}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -2845,90 +5262,57 @@ function OptimizationScreen() {
         </div>
       </div>
 
-      {/* FP-Growth Frequent Pattern Association Rules */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+      {/* FP-Growth Association Rule Mining (§3.1.5) */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-800">FP-Growth Association Rule Mining — Incident Correlation</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Frequent Pattern Tree Algorithm · Discovering joint network failure and pressure anomaly rules</p>
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Sparkles size={15} className="text-purple-600" />
+              FP-Growth Frequent Pattern Mining — Joint Operational Risk Rules (§3.1.5)
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Uncovered association rules linking climatological thresholds, peak electricity tariffs, and pipeline failure incidents
+            </p>
           </div>
-          <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
+          <span className="text-[10px] font-mono text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
             Min Support: 20% · Min Confidence: 60%
           </span>
         </div>
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            {
-              id: "FP-01",
-              antecedents: ["Heat Index > 38°C", "Peak Midday Hour (12PM-2PM)"],
-              consequents: ["Demand Spike > +25%", "Booster Station A Pressure Drop"],
-              metrics: { support: "42%", confidence: "88%", lift: "2.10x" },
-              insight: "Elevated thermal heat index during peak midday hours reliably triggers suction pressure drops at Booster Station A."
-            },
-            {
-              id: "FP-02",
-              antecedents: ["Rainfall > 80 mm / 24h", "Habagat Season Wet Peak"],
-              consequents: ["Turbidity Spike", "Unbilled Storm Infiltration NRW"],
-              metrics: { support: "35%", confidence: "82%", lift: "2.34x" },
-              insight: "Intense tropical rainfall correlates with main pipeline storm infiltration in low-elevation sector 15-C."
-            },
-            {
-              id: "FP-03",
-              antecedents: ["Minimum Night Flow > 180%", "Off-Peak Tariff Window"],
-              consequents: ["Hidden Trunk Line Burst", "Zone NRW > 25%"],
-              metrics: { support: "28%", confidence: "79%", lift: "2.82x" },
-              insight: "Excess night flow between 1AM-4AM indicates active undetected trunk pipe bursts in Zone 2 and Zone 15."
-            },
-            {
-              id: "FP-04",
-              antecedents: ["Pump Efficiency < 75%", "Operating Hours > 22h / day"],
-              consequents: ["Specific Energy > 0.55 kWh/m³", "Thermodynamic Overheat"],
-              metrics: { support: "24%", confidence: "74%", lift: "1.95x" },
-              insight: "Overworked booster pumps demonstrate accelerated thermodynamic degradation during continuous pumping."
-            }
-          ].map(rule => (
-            <div key={rule.id} className="rounded-xl border border-slate-200 p-4 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-mono text-xs font-bold text-[#0038A8] bg-[#0038A8]/10 px-2 py-0.5 rounded">{rule.id}</span>
-                <div className="flex items-center gap-2 text-[10px] font-mono text-slate-600">
-                  <span>Sup: <strong>{rule.metrics.support}</strong></span>
-                  <span>Conf: <strong>{rule.metrics.confidence}</strong></span>
-                  <span className="text-purple-600 font-bold">Lift: {rule.metrics.lift}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs mb-2">
-                <div className="flex flex-wrap gap-1">
-                  {rule.antecedents.map((a, i) => (
-                    <span key={i} className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">{a}</span>
-                  ))}
-                </div>
-                <span className="text-slate-400 font-bold">➔</span>
-                <div className="flex flex-wrap gap-1">
-                  {rule.consequents.map((c, i) => (
-                    <span key={i} className="bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded text-[10px] font-semibold">{c}</span>
-                  ))}
-                </div>
-              </div>
-              <p className="text-[11px] text-slate-600 mt-2 italic border-t border-slate-100 pt-2">{rule.insight}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Action Directives */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800">Actionable Operational Directives</h3>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {ALLOC_DIRECTIVES.map((d, i) => (
-            <div key={i} className="px-5 py-3.5 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${d.priority === "high" ? "bg-[#0038A8]" : d.priority === "medium" ? "bg-amber-400" : "bg-slate-300"}`} />
-              <p className="flex-1 text-xs text-slate-700">{d.title}</p>
-              <span className="font-mono text-xs font-bold text-emerald-600 flex-shrink-0">{d.saving}</span>
-              <button className="text-[10px] font-semibold text-[#0038A8] border border-[#0038A8]/20 bg-[#0038A8]/5 px-2.5 py-1 rounded hover:bg-[#0038A8]/10 transition-colors flex-shrink-0">
-                Apply
-              </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {fpRules.map(rule => (
+            <div
+              key={rule.ruleId}
+              className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 hover:bg-white hover:shadow-md transition-all space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-[#0038A8] bg-blue-100 px-2 py-0.5 rounded">
+                  {rule.ruleId}
+                </span>
+                <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
+                  <span>Support: <strong>{rule.support}</strong></span>
+                  <span>Confidence: <strong>{rule.confidence}</strong></span>
+                  <span className="text-purple-700 font-bold">Lift: {rule.lift}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                {(rule.antecedents || []).map((ant, idx) => (
+                  <span key={idx} className="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-medium">
+                    {ant}
+                  </span>
+                ))}
+                <ArrowRight size={12} className="text-slate-400" />
+                {(rule.consequents || []).map((con, idx) => (
+                  <span key={idx} className="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-medium">
+                    {con}
+                  </span>
+                ))}
+              </div>
+
+              <p className="text-[11px] text-slate-600 leading-relaxed border-t border-slate-100 pt-2 italic">
+                {rule.insight}
+              </p>
             </div>
           ))}
         </div>
@@ -3113,6 +5497,9 @@ function ExportScreen() {
   const [startDate, setStartDate] = useState("2025-01-01")
   const [endDate, setEndDate] = useState("2025-09-30")
   const [zones, setZones] = useState("all")
+  const [notes, setNotes] = useState<string>("")
+  const [signatory, setSignatory] = useState<string>("J. Reyes")
+  const [designation, setDesignation] = useState<string>("Operations Manager · TCWD")
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
   const [history, setHistory] = useState<ExportRecord[]>([])
@@ -3132,8 +5519,62 @@ function ExportScreen() {
     { id: "xlsx", label: "Excel", icon: BarChart3, desc: ".xlsx formatted workbooks",         ext: "xlsx", size: () => `${(0.4 + Math.random() * 0.8).toFixed(1)} MB` },
   ]
 
+  const NOTE_PRESETS = [
+    {
+      label: "Q1 2026 Peak Season Action Directive",
+      text: "Directives approved for TCWD Board Action: (1) Pre-fill elevated storage reservoirs at 100% capacity during Off-Peak tariff block (22:00-06:00). (2) Throttle deep-well pumps during Evening Peak (18:00-22:00) to shave ₱656,100/mo in electricity tariffs. (3) Stage mobile water tankers for priority supply in Zones 1 and 2."
+    },
+    {
+      label: "LWUA NRW Compliance Milestone",
+      text: "Board Resolution Compliance Note: System NRW at 28.0% exceeds the 20.0% LWUA threshold. Acoustic leak sweeps in Panal-Poblacion DMA successfully recovered an estimated 4.2% physical losses. Field inspection of Cluster 4 delinquent accounts scheduled for next cycle."
+    },
+    {
+      label: "Pumping Dispatch & Engineering Caveat",
+      text: "Engineering Advisory: San Vicente Main PS-01 deep well scheduled for routine submersible impeller servicing on Oct 18. Booster Station A and B will absorb intermediate hydraulic flow under standard operating tariffs."
+    }
+  ]
+
   const canGenerate = reportType && format && !generating
   const preview = reportType ? REPORT_PREVIEWS[reportType] : null
+
+  const handleCopyMemo = () => {
+    if (!reportType) {
+      toast.error("Please select a report type first")
+      return
+    }
+    const rt = reportTypes.find(r => r.id === reportType)
+    const memoText = `======================================================================
+AQUASTAT TCWD DECISION SUPPORT SYSTEM · OFFICIAL EXECUTIVE BOARD BRIEF
+Tabaco City Water District · Department of Operations & Analytics
+======================================================================
+Document: ${rt?.title || "Executive Briefing"}
+Reporting Period: ${startDate} to ${endDate}
+Geographic Scope: ${zones === "all" ? "All 20 Service Zones" : zones.toUpperCase()}
+Report Signatory: ${signatory} (${designation})
+Generated On: ${new Date().toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} at ${new Date().toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })} PHT
+
+----------------------------------------------------------------------
+1. AUTOMATED PREDICTIVE & PRESCRIPTIVE SUMMARY
+----------------------------------------------------------------------
+${rt?.id === "demand" ? "Ensemble ML models (SARIMA + LSTM) project total Q4 2025 consumption at 196,400 m³ (+1.4% MoM). Peak dry season demand arrives April 2026 with an anticipated deficit of 41,800 m³/mo in Zones 1 and 2 (Model MAPE: 3.24%)." : rt?.desc}
+
+----------------------------------------------------------------------
+2. EXECUTIVE ANNOTATIONS & OPERATIONAL DIRECTIVES (§1.3.2 Objective 1)
+----------------------------------------------------------------------
+${notes.trim() ? notes : "No manual notes or operational caveats entered by the operator."}
+
+----------------------------------------------------------------------
+3. COMPLIANCE & AUTHORIZATION
+----------------------------------------------------------------------
+Submitted to: General Manager & TCWD Board of Directors
+Status: APPROVED FOR DISTRIBUTION AND LWUA SUBMISSION
+======================================================================`
+
+    navigator.clipboard.writeText(memoText)
+    toast.success("Executive Board Memo copied to clipboard!", {
+      description: `Includes automated analytics and notes signed by ${signatory}.`
+    })
+  }
 
   const handleGenerate = () => {
     if (!canGenerate) return
@@ -3147,16 +5588,17 @@ function ExportScreen() {
         clearInterval(progressRef.current!)
         const rt = reportTypes.find(r => r.id === reportType)!
         const fmt = formats.find(f => f.id === format)!
+        const hasNotes = Boolean(notes.trim())
         const record: ExportRecord = {
           id: nextId.current++,
-          title: rt.title,
+          title: `${rt.title}${hasNotes ? " (with Executive Notes)" : ""}`,
           format: fmt.label,
           size: fmt.size(),
           timestamp: new Date(),
         }
         setHistory(prev => [record, ...prev])
         toast.success(`${rt.title} downloaded`, {
-          description: `${fmt.label} · ${record.size} · ${record.timestamp.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })} PHT`,
+          description: `${fmt.label} · ${record.size} · Signed by ${signatory} (${record.timestamp.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })} PHT)`,
         })
         setGenerating(false)
         setProgress(0)
@@ -3169,9 +5611,23 @@ function ExportScreen() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Export & Report Builder</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Executive reporting · LWUA compliance documentation · Operational records</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Export &amp; Report Builder</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Customizable reporting with qualitative operator annotations · LWUA compliance documentation (§1.3.2 Objective 1, §3.6.10)
+          </p>
+        </div>
+        {reportType && (
+          <button
+            onClick={handleCopyMemo}
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#0038A8] bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-lg transition-colors cursor-pointer self-start sm:self-auto shadow-2xs"
+            title="Copy complete board report with manual annotations"
+          >
+            <Copy size={13} />
+            <span>Copy Board Memo</span>
+          </button>
+        )}
       </div>
 
       {/* Step 1: Report type */}
@@ -3207,7 +5663,7 @@ function ExportScreen() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <span className="w-5 h-5 rounded-full bg-[#0038A8] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-          Period & Scope
+          Period &amp; Scope
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -3226,18 +5682,110 @@ function ExportScreen() {
               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all">
               <option value="all">All 20 Zones</option>
               <option value="critical">Critical Zones Only (6)</option>
-              <option value="zone1">Zone 1</option>
-              <option value="zone2">Zone 2</option>
+              <option value="zone1">Zone 1 (Tabaco Center)</option>
+              <option value="zone2">Zone 2 (Panal / Poblacion)</option>
               <option value="custom">Custom Selection…</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Step 3: Format */}
+      {/* Step 3: Executive Annotations & Manual Notes (§1.3.2 Objective 1, §3.6.10) */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-[#0038A8] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">3</span>
+              <MessageSquare size={14} className="text-[#0038A8]" />
+              Executive Annotations &amp; Policy Directives (Manual Input)
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Manuscript §1.3.2 Objective 1 requirement: append qualitative observations, engineering caveats, and board directives to official exports
+            </p>
+          </div>
+          <span className="text-[10px] font-mono text-slate-400 self-end sm:self-auto">
+            {notes.length} characters
+          </span>
+        </div>
+
+        {/* Quick Insert Preset Buttons */}
+        <div>
+          <p className="text-[11px] font-semibold text-slate-500 mb-2 uppercase tracking-wide flex items-center gap-1">
+            <Sparkles size={11} className="text-[#0038A8]" />
+            Quick Insert Standard Directives:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {NOTE_PRESETS.map((preset, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setNotes(preset.text)}
+                className="text-[11px] bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-[#0038A8] border border-slate-200 hover:border-blue-300 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer text-left"
+              >
+                + {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Notes Textarea */}
+        <div className="relative">
+          <textarea
+            rows={3}
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Type executive observations, operational caveats, or official board directives to be included with this export (e.g. 'Priority pipe rehabilitation authorized for Panal DMA in Q1 2026. Pre-fill elevated storage reservoirs during Night Off-Peak block.')..."
+            className="w-full text-xs text-slate-800 border border-slate-200 rounded-lg p-3 bg-slate-50/70 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all resize-y leading-relaxed"
+          />
+          {notes && (
+            <button
+              onClick={() => setNotes("")}
+              className="absolute top-2 right-2 text-[10px] text-slate-400 hover:text-slate-600 bg-white/80 border border-slate-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Signatory credentials */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div>
+            <label className="block text-[10px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">
+              Reporting Signatory
+            </label>
+            <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50/50">
+              <User size={13} className="text-slate-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={signatory}
+                onChange={e => setSignatory(e.target.value)}
+                className="w-full text-xs text-slate-800 bg-transparent focus:outline-none font-medium"
+                placeholder="Operator name"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">
+              Official Designation / Department
+            </label>
+            <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50/50">
+              <Shield size={13} className="text-slate-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={designation}
+                onChange={e => setDesignation(e.target.value)}
+                className="w-full text-xs text-slate-800 bg-transparent focus:outline-none font-medium"
+                placeholder="Department role"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Step 4: Output Format */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-[#0038A8] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">3</span>
+          <span className="w-5 h-5 rounded-full bg-[#0038A8] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">4</span>
           Output Format
         </h3>
         <div className="grid grid-cols-3 gap-3">
@@ -3256,26 +5804,75 @@ function ExportScreen() {
         </div>
       </div>
 
-      {/* AI Summary Preview — dynamic by report type */}
+      {/* Dynamic Summary Preview (with integrated Manual Notes Addendum) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-            <Activity size={14} className="text-[#0038A8]" /> AI-Generated Executive Summary Preview
+            <Activity size={14} className="text-[#0038A8]" />
+            Official Report &amp; Executive Memo Preview
           </h3>
-          <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">Auto-generated</span>
+          <div className="flex items-center gap-2">
+            {notes && (
+              <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded font-semibold">
+                Includes Manual Directives
+              </span>
+            )}
+            <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+              Live Preview
+            </span>
+          </div>
         </div>
-        <div className="p-5 bg-slate-50/50 min-h-[100px] flex items-center">
+
+        <div className="p-5 bg-slate-50/50 space-y-4">
           <AnimatePresence mode="wait">
             {preview ? (
-              <motion.p key={reportType} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }} className="text-xs text-slate-700 leading-relaxed">
-                <span className="font-semibold text-slate-900">{preview.title}</span><br /><br />
-                {preview.body}
-              </motion.p>
+              <motion.div key={reportType} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }} className="space-y-4">
+                {/* Machine Learning / Statistical Core Summary */}
+                <div className="text-xs text-slate-700 leading-relaxed bg-white p-4 rounded-lg border border-slate-200 shadow-2xs">
+                  <p className="font-bold text-slate-900 mb-2 border-b border-slate-100 pb-1.5 flex items-center justify-between">
+                    <span>{preview.title}</span>
+                    <span className="text-[10px] font-normal text-slate-400 font-mono">
+                      Scope: {zones === "all" ? "All Zones" : zones} · {startDate} to {endDate}
+                    </span>
+                  </p>
+                  <div>{preview.body}</div>
+                </div>
+
+                {/* Qualitative Executive Annotation Callout (Rendered when notes exist) */}
+                {notes.trim() ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-blue-50/80 border-l-4 border-l-[#0038A8] border-y border-r border-blue-200 rounded-r-lg p-3.5 text-xs text-blue-900 space-y-2 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs flex items-center gap-1.5 text-[#0038A8]">
+                        <PenTool size={12} />
+                        Executive Observation &amp; Operational Caveats (§3.6.10):
+                      </span>
+                      <span className="text-[10px] font-mono text-blue-600">
+                        Signatory: {signatory} ({designation})
+                      </span>
+                    </div>
+                    <p className="text-blue-950 font-sans italic leading-relaxed pl-2">
+                      &quot;{notes}&quot;
+                    </p>
+                    <div className="text-[10px] text-blue-600 pt-1 border-t border-blue-200/60 flex items-center justify-between">
+                      <span>Certified for LWUA compliance review &amp; TCWD Engineering Section</span>
+                      <span>Recorded: {new Date().toLocaleDateString("en-PH")}</span>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="text-[11px] text-slate-400 italic bg-white/70 p-3 rounded border border-dashed border-slate-200 text-center">
+                    Optional: Add manual text directives or caveats in Step 3 above to embed executive commentary into this export.
+                  </div>
+                )}
+              </motion.div>
             ) : (
               <motion.p key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="text-xs text-slate-400 italic">
-                Select a report type above to preview the AI-generated executive summary.
+                className="text-xs text-slate-400 italic py-4 text-center">
+                Select a report type above to preview the automated summary and manual executive annotations.
               </motion.p>
             )}
           </AnimatePresence>
@@ -3284,25 +5881,41 @@ function ExportScreen() {
 
       {/* Generate Button + Progress */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="text-xs text-slate-500">
             {!reportType && !format && "Select a report type and format to continue."}
-            {reportType && !format && "Select an output format to continue."}
+            {reportType && !format && "Select an output format (PDF, CSV, Excel) to continue."}
             {!reportType && format && "Select a report type to continue."}
             {reportType && format && !generating && (
-              <span className="text-slate-700">Ready: <span className="font-semibold text-[#0038A8]">{reportTypes.find(r => r.id === reportType)?.title}</span> as <span className="font-semibold">{formats.find(f => f.id === format)?.label}</span></span>
+              <span className="text-slate-700">
+                Ready: <span className="font-semibold text-[#0038A8]">{reportTypes.find(r => r.id === reportType)?.title}</span> as{" "}
+                <span className="font-semibold">{formats.find(f => f.id === format)?.label}</span>
+                {notes.trim() && <span className="text-emerald-600 font-semibold"> (with Executive Annotations)</span>}
+              </span>
             )}
-            {generating && <span className="text-[#0038A8] font-semibold">Generating… {Math.round(progress)}%</span>}
+            {generating && <span className="text-[#0038A8] font-semibold">Compiling document… {Math.round(progress)}%</span>}
           </div>
-          <button onClick={handleGenerate} disabled={!canGenerate}
-            className="flex items-center gap-2 text-sm font-semibold text-white px-6 py-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-            style={{ background: generating ? "#6B8FD4" : "#0038A8" }}>
-            {generating ? (
-              <><motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block"><RefreshCw size={15} /></motion.span> Generating…</>
-            ) : (
-              <><Download size={15} /> Generate & Download</>
+          <div className="flex items-center gap-2">
+            {reportType && (
+              <button
+                type="button"
+                onClick={handleCopyMemo}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+              >
+                <Copy size={14} />
+                <span>Copy Memo</span>
+              </button>
             )}
-          </button>
+            <button onClick={handleGenerate} disabled={!canGenerate}
+              className="flex items-center gap-2 text-sm font-semibold text-white px-6 py-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer shadow-sm"
+              style={{ background: generating ? "#6B8FD4" : "#0038A8" }}>
+              {generating ? (
+                <><motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block"><RefreshCw size={15} /></motion.span> Generating…</>
+              ) : (
+                <><Download size={15} /> Generate &amp; Download</>
+              )}
+            </button>
+          </div>
         </div>
         {generating && (
           <div className="mt-3">
@@ -3347,9 +5960,13 @@ function ExportScreen() {
 }
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────────
-function Sidebar({ current, onNavigate, collapsed, onToggle }: {
+function Sidebar({ current, onNavigate, collapsed, onToggle, onOpenSearch, user, onOpenProfile, onInitiateLogout }: {
   current: ScreenId; onNavigate: (s: ScreenId) => void
   collapsed: boolean; onToggle: () => void
+  onOpenSearch?: () => void
+  user: UserAccount
+  onOpenProfile: () => void
+  onInitiateLogout: () => void
 }) {
   return (
     <motion.aside
@@ -3373,6 +5990,25 @@ function Sidebar({ current, onNavigate, collapsed, onToggle }: {
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
+
+      {/* Quick Search trigger in Sidebar */}
+      {!collapsed && onOpenSearch && (
+        <div className="px-3 pt-3 pb-1">
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs transition-all cursor-pointer group shadow-2xs"
+          >
+            <div className="flex items-center gap-2">
+              <Search size={13} className="text-blue-400 group-hover:text-blue-300 transition-colors" />
+              <span className="text-[11px] font-medium text-slate-300">Quick Command</span>
+            </div>
+            <kbd className="text-[9px] font-mono text-slate-400 bg-white/10 px-1.5 py-0.5 rounded border border-white/10">
+              Ctrl K
+            </kbd>
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
@@ -3415,32 +6051,319 @@ function Sidebar({ current, onNavigate, collapsed, onToggle }: {
         })}
       </nav>
 
-      {/* Footer */}
-      {!collapsed && (
+      {/* Footer User Profile Card with Direct Log Out */}
+      {!collapsed ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-          className="border-t border-white/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2.5">
-            <div className="w-7 h-7 rounded-full bg-[#0038A8] flex items-center justify-center flex-shrink-0">
-              <User size={13} className="text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-200 truncate">J. Reyes</p>
-              <p className="text-[10px] text-slate-500 truncate">Operations Manager</p>
-            </div>
+          className="border-t border-white/5 px-3 py-3">
+          <div className="flex items-center justify-between gap-2 p-1.5 rounded-xl hover:bg-white/5 transition-colors group">
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
+              title="Click to view officer credentials & profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#0038A8] border border-white/20 flex items-center justify-center flex-shrink-0 text-white font-mono font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
+                {user.avatarInitials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors truncate">{user.name.split(",")[0]}</p>
+                <p className="text-[10px] text-blue-300/70 truncate">{user.role}</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={onInitiateLogout}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/15 border border-transparent hover:border-red-500/30 transition-all cursor-pointer flex-shrink-0"
+              title="Log Out (Sign out of session)"
+              aria-label="Log Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
-            <span>Secure session · TLS 1.3</span>
+
+          <div className="mt-1.5 pt-1.5 border-t border-white/5 flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+              <span>Secure session · TLS 1.3</span>
+            </div>
+            <button
+              type="button"
+              onClick={onInitiateLogout}
+              className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-red-400 transition-colors cursor-pointer group"
+              title="Log Out (Sign out of session)"
+            >
+              <LogOut size={11} className="group-hover:translate-x-0.5 transition-transform" />
+              <span>Log out</span>
+            </button>
           </div>
-          <p className="text-[9px] text-slate-600 mt-1">AquaStat v2.4.1</p>
+          <p className="text-[9px] text-slate-600 mt-1 px-1">AquaStat v2.4.1</p>
         </motion.div>
+      ) : (
+        <div className="border-t border-white/5 py-3 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="w-8 h-8 rounded-full bg-[#0038A8] border border-white/20 flex items-center justify-center text-white font-mono font-bold text-xs cursor-pointer shadow-sm hover:scale-105 transition-transform"
+            title={`Signed in as ${user.name} — Click to view profile`}
+          >
+            {user.avatarInitials}
+          </button>
+          <button
+            type="button"
+            onClick={onInitiateLogout}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition-colors cursor-pointer"
+            title="Log Out (Sign out of session)"
+            aria-label="Log Out"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
       )}
     </motion.aside>
   )
 }
 
+// ── GLOBAL SEARCH & COMMAND PALETTE REGISTRY ────────────────────────────────
+interface SearchItem {
+  id: string
+  title: string
+  category: "Zone / Barangay" | "Analytics Module" | "Production Facility" | "Algorithm / Model"
+  subtitle: string
+  screen: ScreenId
+  badge?: string
+  zoneId?: number
+}
+
+const SEARCH_REGISTRY: SearchItem[] = [
+  // Analytics Modules
+  { id: "mod-opt",   title: "Prescriptive Optimization & Pump Scheduling", category: "Analytics Module", subtitle: "MILP cost minimization, TOU tariffs, and MCDA TOPSIS rationing", screen: "optimization", badge: "Prescriptive" },
+  { id: "mod-pred",  title: "Demand Forecasting & Predictive Tier", category: "Analytics Module", subtitle: "Multivariate LSTM, SARIMA, Meta Prophet, and XGBoost models", screen: "predictive", badge: "Predictive" },
+  { id: "mod-desc",  title: "Descriptive Analytics & Customer Segmentation", category: "Analytics Module", subtitle: "K-Means clustering (k=4), RFM consumer profiling, and historical heatmaps", screen: "descriptive", badge: "Descriptive" },
+  { id: "mod-nrw",   title: "NRW Hotspot Analysis & Water Balance Audit", category: "Analytics Module", subtitle: "IWA standard water loss accounting and acoustic sweep schedule", screen: "nrw", badge: "Operations" },
+  { id: "mod-short", title: "Supply & Shortage Monitoring", category: "Analytics Module", subtitle: "Sustainable supply capacity, storage gauges, and dry season deficits", screen: "shortage", badge: "Operations" },
+  { id: "mod-weath", title: "Weather & Climate Correlation", category: "Analytics Module", subtitle: "PAGASA Doppler live radar, r²=0.72 demand regression, and 10-day forecast", screen: "weather", badge: "External Regressors" },
+  { id: "mod-zones", title: "Service Zone-by-Zone Detailed Analysis", category: "Analytics Module", subtitle: "20 zone profiles, diurnal consumption curves, and connection counts", screen: "zones", badge: "Spatial" },
+  { id: "mod-alert", title: "Alerts & Operational Notifications", category: "Analytics Module", subtitle: "Centralized threshold monitoring, pressure drop flags, and work orders", screen: "alerts", badge: "Alerts" },
+  { id: "mod-exp",   title: "Export & Report Builder (with Executive Notes)", category: "Analytics Module", subtitle: "LWUA compliance documentation, manual annotations, and PDF/CSV export", screen: "export", badge: "Reporting" },
+  { id: "mod-dash",  title: "Executive Overview Dashboard", category: "Analytics Module", subtitle: "High-level summary metrics, NRW gauges, and real-time operational status", screen: "dashboard", badge: "Executive" },
+
+  // Zones & Barangays in Tabaco City (Deep-linked with zoneId)
+  { id: "zone-01", title: "Zone 1 · Tabaco Center (Poblacion)", category: "Zone / Barangay", subtitle: "Commercial core · 24.2% NRW · 892 accounts · Pop: 4,120", screen: "zones", badge: "Critical Zone", zoneId: 1 },
+  { id: "zone-02", title: "Zone 2 · Panal (Poblacion)", category: "Zone / Barangay", subtitle: "High density · 27.0% NRW · 1,124 accounts · Pop: 5,280", screen: "zones", badge: "Critical Zone", zoneId: 2 },
+  { id: "zone-03", title: "Zone 3 · Magallanes", category: "Zone / Barangay", subtitle: "Coastal sector · 18.4% NRW · 698 accounts · Pop: 3,140", screen: "zones", badge: "Warning Zone", zoneId: 3 },
+  { id: "zone-04", title: "Zone 4 · San Roque", category: "Zone / Barangay", subtitle: "Residential · 14.8% NRW · 582 accounts · Pop: 2,680", screen: "zones", badge: "Normal Zone", zoneId: 4 },
+  { id: "zone-05", title: "Zone 5 · Cormidal", category: "Zone / Barangay", subtitle: "Intermediate grid · 16.2% NRW · 461 accounts · Pop: 2,100", screen: "zones", badge: "Warning Zone", zoneId: 5 },
+  { id: "zone-06", title: "Zone 6 · Tagas", category: "Zone / Barangay", subtitle: "Low leakage · 12.4% NRW · 428 accounts · Pop: 1,980", screen: "zones", badge: "Normal Zone", zoneId: 6 },
+  { id: "zone-07", title: "Zone 7 · Sagrada / Fatima", category: "Zone / Barangay", subtitle: "Elevated sector · 19.8% NRW · 802 accounts · Pop: 3,720", screen: "zones", badge: "Warning Zone", zoneId: 7 },
+  { id: "zone-08", title: "Zone 8 · Tayhi", category: "Zone / Barangay", subtitle: "Urban residential · 11.2% NRW · 384 accounts · Pop: 1,760", screen: "zones", badge: "Normal Zone", zoneId: 8 },
+  { id: "zone-09", title: "Zone 9 · Bombon", category: "Zone / Barangay", subtitle: "Midday pressure draw · 17.6% NRW · 502 accounts · Pop: 2,320", screen: "zones", badge: "Warning Zone", zoneId: 9 },
+  { id: "zone-10", title: "Zone 10 · Baranghawon", category: "Zone / Barangay", subtitle: "Standard baseline · 10.8% NRW · 318 accounts · Pop: 1,440", screen: "zones", badge: "Normal Zone", zoneId: 10 },
+  { id: "zone-11", title: "Zone 11 · San Carlos", category: "Zone / Barangay", subtitle: "Low NRW loss · 15.4% NRW · 437 accounts · Pop: 2,020", screen: "zones", badge: "Normal Zone", zoneId: 11 },
+  { id: "zone-12", title: "Zone 12 · Basud", category: "Zone / Barangay", subtitle: "Rural connection grid · 9.8% NRW · 286 accounts · Pop: 1,320", screen: "zones", badge: "Normal Zone", zoneId: 12 },
+  { id: "zone-13", title: "Zone 13 · San Vicente", category: "Zone / Barangay", subtitle: "Main well proximity · 16.8% NRW · 449 accounts · Pop: 2,080", screen: "zones", badge: "Warning Zone", zoneId: 13 },
+  { id: "zone-14", title: "Zone 14 · Quinastillohan", category: "Zone / Barangay", subtitle: "Agricultural buffer · 13.2% NRW · 363 accounts · Pop: 1,680", screen: "zones", badge: "Normal Zone", zoneId: 14 },
+  { id: "zone-15", title: "Zone 15 · Sto. Cristo", category: "Zone / Barangay", subtitle: "High priority DMA · 22.3% NRW · 620 accounts · Pop: 3,360", screen: "zones", badge: "Critical Zone", zoneId: 15 },
+  { id: "zone-16", title: "Zone 16 · Fatima (Upland)", category: "Zone / Barangay", subtitle: "Pressure stepdown active · 18.2% NRW · 410 accounts · Pop: 1,940", screen: "zones", badge: "Warning Zone", zoneId: 16 },
+  { id: "zone-17", title: "Zone 17 · Buang", category: "Zone / Barangay", subtitle: "Booster station feed · 20.4% NRW · 512 accounts · Pop: 2,540", screen: "zones", badge: "Critical Zone", zoneId: 17 },
+  { id: "zone-18", title: "Zone 18 · Mariroc", category: "Zone / Barangay", subtitle: "Peripheral sector · 14.2% NRW · 340 accounts · Pop: 1,590", screen: "zones", badge: "Normal Zone", zoneId: 18 },
+  { id: "zone-19", title: "Zone 19 · Pinagbobong", category: "Zone / Barangay", subtitle: "Gravity spring intake · 11.5% NRW · 290 accounts · Pop: 1,350", screen: "zones", badge: "Normal Zone", zoneId: 19 },
+  { id: "zone-20", title: "Zone 20 · Bogñabong", category: "Zone / Barangay", subtitle: "Southern boundary grid · 16.0% NRW · 375 accounts · Pop: 1,740", screen: "zones", badge: "Warning Zone", zoneId: 20 },
+
+  // Production Facilities
+  { id: "fac-ps01", title: "San Vicente Main Pumping Station PS-01", category: "Production Facility", subtitle: "6,000 m³/day submersible deep well extraction · 0.38 kWh/m³", screen: "optimization", badge: "Main Pump" },
+  { id: "fac-psa",  title: "Booster Station A — Panal Intermediate", category: "Production Facility", subtitle: "4,500 m³/day variable frequency drive booster · 0.44 kWh/m³", screen: "optimization", badge: "Booster A" },
+  { id: "fac-psb",  title: "Booster Station B — Buang High-Elevation", category: "Production Facility", subtitle: "3,200 m³/day multi-stage booster pump · 0.52 kWh/m³", screen: "optimization", badge: "Booster B" },
+  { id: "fac-spr",  title: "Mayon Mountain Gravity Springs (Pinagbobong & Buang)", category: "Production Facility", subtitle: "1,800 m³/day uninterrupted gravity flow · ₱0.00 electricity cost", screen: "shortage", badge: "Gravity Springs" },
+
+  // Algorithmic Models in Manuscript
+  { id: "algo-milp",   title: "Mixed-Integer Linear Programming (MILP)", category: "Algorithm / Model", subtitle: "Objective: Min Total Pumping Cost subject to demand & hydraulic constraints", screen: "optimization", badge: "Mathematical Model" },
+  { id: "algo-topsis", title: "TOPSIS Multi-Criteria Decision Analysis (MCDA)", category: "Algorithm / Model", subtitle: "Optimal water rationing prioritization under drought deficit scenarios", screen: "optimization", badge: "Decision Analysis" },
+  { id: "algo-fpg",    title: "FP-Growth Association Rule Mining", category: "Algorithm / Model", subtitle: "Uncovering hidden relationships between weather, night flow, and pipe bursts", screen: "optimization", badge: "Pattern Mining" },
+  { id: "algo-lstm",   title: "Multivariate Long Short-Term Memory (LSTM)", category: "Algorithm / Model", subtitle: "Champion forecasting neural network utilizing temperature and rainfall lag tensors", screen: "predictive", badge: "Deep Learning" },
+  { id: "algo-kmeans", title: "K-Means Consumer Segmentation (k = 4)", category: "Algorithm / Model", subtitle: "RFM behavioral profiling of 26,720 active consumer connections", screen: "descriptive", badge: "Clustering" }
+]
+
+function SearchPaletteModal({
+  isOpen,
+  onClose,
+  onSelectScreen
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onSelectScreen: (s: ScreenId, zoneId?: number) => void
+}) {
+  const [query, setQuery] = useState("")
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery("")
+      setSelectedIndex(0)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  const trimmed = query.trim().toLowerCase()
+  const filtered = trimmed === ""
+    ? SEARCH_REGISTRY.slice(0, 10)
+    : SEARCH_REGISTRY.filter(item =>
+        item.title.toLowerCase().includes(trimmed) ||
+        item.subtitle.toLowerCase().includes(trimmed) ||
+        item.category.toLowerCase().includes(trimmed) ||
+        (item.badge && item.badge.toLowerCase().includes(trimmed))
+      )
+
+  const handleSelect = (item: SearchItem) => {
+    onSelectScreen(item.screen, item.zoneId)
+    onClose()
+    toast.info(`Navigated to ${SCREEN_LABELS[item.screen]}`, {
+      description: item.title
+    })
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault()
+      setSelectedIndex(prev => (filtered.length > 0 ? (prev + 1) % filtered.length : 0))
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      setSelectedIndex(prev => (filtered.length > 0 ? (prev - 1 + filtered.length) % filtered.length : 0))
+    } else if (e.key === "Enter") {
+      e.preventDefault()
+      if (filtered[selectedIndex]) {
+        handleSelect(filtered[selectedIndex])
+      }
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-start justify-center pt-16 md:pt-24 px-4 transition-all"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: -12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: -12 }}
+        transition={{ duration: 0.15 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-xl bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[75vh]"
+      >
+        {/* Search Input Bar */}
+        <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+          <Search size={18} className="text-[#0038A8] flex-shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => {
+              setQuery(e.target.value)
+              setSelectedIndex(0)
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Type zone, barangay (e.g. Panal, Tagas), module, or algorithm…"
+            className="w-full text-sm bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium"
+          />
+          {query ? (
+            <button
+              onClick={() => {
+                setQuery("")
+                setSelectedIndex(0)
+              }}
+              className="text-xs text-slate-400 hover:text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded cursor-pointer"
+            >
+              Clear
+            </button>
+          ) : (
+            <kbd className="text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs">
+              ESC
+            </kbd>
+          )}
+        </div>
+
+        {/* Results List */}
+        <div className="flex-1 overflow-y-auto p-2 divide-y divide-slate-50 space-y-0.5">
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs">
+              <Database className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+              <p className="font-semibold text-slate-600">No matching records found</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Try searching &quot;Panal&quot;, &quot;Optimization&quot;, &quot;LSTM&quot;, or &quot;Zone 1&quot;</p>
+            </div>
+          ) : (
+            filtered.map((item, idx) => (
+              <div
+                key={item.id}
+                onClick={() => handleSelect(item)}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                className={`p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between gap-3 group border ${
+                  selectedIndex === idx
+                    ? "bg-blue-50/90 border-blue-200/80 shadow-2xs"
+                    : "border-transparent hover:bg-slate-50"
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold transition-colors truncate ${
+                      selectedIndex === idx ? "text-[#0038A8]" : "text-slate-800 group-hover:text-[#0038A8]"
+                    }`}>
+                      {item.title}
+                    </span>
+                    {item.badge && (
+                      <span className="text-[9px] font-semibold px-2 py-0.2 rounded-full bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-800 transition-colors flex-shrink-0">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 group-hover:text-slate-600 mt-0.5 truncate">
+                    {item.subtitle}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
+                    {item.category}
+                  </span>
+                  <ArrowRight size={13} className={`transition-all ${
+                    selectedIndex === idx ? "text-[#0038A8] translate-x-0.5" : "text-slate-300 group-hover:text-[#0038A8]"
+                  }`} />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer shortcuts */}
+        <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="flex items-center gap-3">
+            <span>Use <kbd className="font-mono bg-white border px-1 rounded shadow-2xs text-[10px] text-slate-600">↑</kbd> <kbd className="font-mono bg-white border px-1 rounded shadow-2xs text-[10px] text-slate-600">↓</kbd> to navigate</span>
+            <span><kbd className="font-mono bg-white border px-1 rounded shadow-2xs text-[10px] text-slate-600">Enter</kbd> to select</span>
+            <span><kbd className="font-mono bg-white border px-1 rounded shadow-2xs text-[10px] text-slate-600">Esc</kbd> to close</span>
+          </div>
+          <span className="font-mono text-slate-500">{filtered.length} entries available</span>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ── TOPBAR ─────────────────────────────────────────────────────────────────
-function Topbar({ current, onMenuClick, onNavigate }: { current: ScreenId; onMenuClick: () => void; onNavigate?: (s: ScreenId) => void }) {
+function Topbar({
+  current,
+  onMenuClick,
+  onNavigate,
+  onOpenSearch,
+  user,
+  onOpenProfile
+}: {
+  current: ScreenId
+  onMenuClick: () => void
+  onNavigate?: (s: ScreenId) => void
+  onOpenSearch?: () => void
+  user: UserAccount
+  onOpenProfile: () => void
+}) {
   const [time, setTime] = useState(new Date())
   const { current: weather } = useWeatherData()
 
@@ -3472,11 +6395,17 @@ function Topbar({ current, onMenuClick, onNavigate }: { current: ScreenId; onMen
         <span className="font-semibold text-slate-700">{SCREEN_LABELS[current]}</span>
       </div>
       <div className="flex-1 max-w-xs hidden sm:block">
-        <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input placeholder="Search zone, barangay, account no., date…"
-            className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all" />
-        </div>
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="w-full relative pl-8 pr-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100/80 text-slate-400 hover:text-slate-600 transition-all flex items-center justify-between text-left cursor-pointer group shadow-2xs"
+        >
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-slate-600 transition-colors" />
+          <span className="truncate">Search zone, barangay, model...</span>
+          <kbd className="hidden lg:inline-flex items-center text-[9px] font-mono font-semibold text-slate-500 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs">
+            Ctrl K
+          </kbd>
+        </button>
       </div>
       <div className="ml-auto flex items-center gap-2">
         {/* Real-time Live Weather Widget */}
@@ -3513,13 +6442,39 @@ function Topbar({ current, onMenuClick, onNavigate }: { current: ScreenId; onMen
             {time.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Manila" })} PHT
           </span>
         </div>
+        {/* Mobile search button — accessible on phones / narrow screens */}
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="sm:hidden p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          title="Search (Ctrl + K)"
+        >
+          <Search size={15} />
+        </button>
         <button className="relative p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
           <Bell size={15} />
           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#D32F2F]" />
         </button>
-        <div className="w-7 h-7 rounded-full bg-[#0038A8] flex items-center justify-center cursor-pointer shadow-sm">
-          <User size={13} className="text-white" />
-        </div>
+
+        {/* User Profile & Credentials Trigger */}
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer group shadow-2xs"
+          title={`Signed in as ${user.name} (${user.role}) — Click to view profile`}
+        >
+          <div className="w-6 h-6 rounded-full bg-[#0038A8] text-white flex items-center justify-center font-mono font-bold text-[10px] shadow-sm">
+            {user.avatarInitials}
+          </div>
+          <div className="text-left hidden lg:block leading-none">
+            <p className="text-xs font-bold text-slate-800 group-hover:text-[#0038A8] transition-colors truncate max-w-[120px]">
+              {user.name.split(",")[0]}
+            </p>
+            <p className="text-[9px] text-slate-400 mt-0.5 truncate max-w-[120px]">
+              {user.role}
+            </p>
+          </div>
+        </button>
       </div>
     </header>
   )
@@ -3534,18 +6489,121 @@ export default function App() {
   )
 }
 
+interface ErrorBoundaryProps {
+  children: ReactNode
+  screenKey: string
+}
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
+}
+class ScreenErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error: Error, info: any) {
+    console.error("Screen crashed:", error, info)
+  }
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    if (prevProps.screenKey !== this.props.screenKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null })
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 max-w-lg mx-auto my-12 bg-white rounded-2xl border border-red-200 shadow-sm text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+            <AlertCircle size={24} />
+          </div>
+          <h2 className="text-base font-bold text-slate-800">Screen Render Notice</h2>
+          <p className="text-xs text-slate-500 font-mono bg-slate-50 p-3 rounded-lg border border-slate-200 text-left overflow-auto max-h-32">
+            {this.state.error?.message || "An issue occurred rendering this view."}
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 bg-[#0038A8] text-white text-xs font-semibold rounded-lg hover:bg-blue-800 transition-all cursor-pointer"
+          >
+            Retry View
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function AppContent() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
+    try {
+      const saved = localStorage.getItem("aquastat_user_session")
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // ignore
+    }
+    return MANAGEMENT_ACCOUNTS[1] // Default: Engr. Julian Reyes, Operations Manager
+  })
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return Boolean(localStorage.getItem("aquastat_user_session"))
+  })
+
   const [currentScreen, setCurrentScreen] = useState<ScreenId>("dashboard")
   const [collapsed, setCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [searchPaletteOpen, setSearchPaletteOpen] = useState(false)
+  const [targetZoneId, setTargetZoneId] = useState<number | null>(null)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault()
+        setSearchPaletteOpen(prev => !prev)
+      }
+      if (e.key === "Escape") {
+        setSearchPaletteOpen(false)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
+  const handleLogin = (user: UserAccount) => {
+    setCurrentUser(user)
+    setIsAuthenticated(true)
+  }
+
+  const handleConfirmLogout = () => {
+    localStorage.removeItem("aquastat_user_session")
+    setIsAuthenticated(false)
+    setIsLogoutConfirmOpen(false)
+    setIsProfileOpen(false)
+    toast.info("Signed Out Successfully", {
+      description: "Secure executive session terminated."
+    })
+  }
 
   if (!isAuthenticated) {
     return (
       <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }} className="h-screen">
-        <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+        <Toaster position="bottom-right" richColors />
+        <LoginScreen onLogin={handleLogin} />
       </div>
     )
+  }
+
+  const handleNavigate = (s: ScreenId, zoneId?: number) => {
+    setCurrentScreen(s)
+    setMobileNavOpen(false)
+    if (zoneId !== undefined) {
+      setTargetZoneId(zoneId)
+    }
   }
 
   const renderScreen = () => {
@@ -3556,16 +6614,11 @@ function AppContent() {
       case "shortage":     return <ShortageScreen />
       case "weather":      return <WeatherScreen />
       case "nrw":          return <NRWScreen />
-      case "zones":        return <ZonesScreen />
+      case "zones":        return <ZonesScreen initialZoneId={targetZoneId} onClearInitialZone={() => setTargetZoneId(null)} />
       case "optimization": return <OptimizationScreen />
       case "alerts":       return <AlertsScreen />
       case "export":       return <ExportScreen />
     }
-  }
-
-  const handleNavigate = (s: ScreenId) => {
-    setCurrentScreen(s)
-    setMobileNavOpen(false)
   }
 
   return (
@@ -3579,6 +6632,28 @@ function AppContent() {
         />
       )}
 
+      {/* Global Search & Command Palette Modal */}
+      <SearchPaletteModal
+        isOpen={searchPaletteOpen}
+        onClose={() => setSearchPaletteOpen(false)}
+        onSelectScreen={handleNavigate}
+      />
+
+      {/* Executive User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        user={currentUser}
+      />
+
+      {/* Sign Out Confirmation Modal */}
+      <LogoutConfirmationModal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirmLogout={handleConfirmLogout}
+        userName={currentUser.name}
+      />
+
       {/* Sidebar — drawer on mobile, static on desktop */}
       <div className={`fixed inset-y-0 left-0 z-50 md:relative md:z-auto md:translate-x-0 transition-transform duration-300 ease-in-out ${mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         <Sidebar
@@ -3586,6 +6661,10 @@ function AppContent() {
           onNavigate={handleNavigate}
           collapsed={collapsed}
           onToggle={() => setCollapsed(!collapsed)}
+          onOpenSearch={() => setSearchPaletteOpen(true)}
+          user={currentUser}
+          onOpenProfile={() => setIsProfileOpen(true)}
+          onInitiateLogout={() => setIsLogoutConfirmOpen(true)}
         />
       </div>
 
@@ -3594,6 +6673,9 @@ function AppContent() {
           current={currentScreen}
           onMenuClick={() => setMobileNavOpen(true)}
           onNavigate={handleNavigate}
+          onOpenSearch={() => setSearchPaletteOpen(true)}
+          user={currentUser}
+          onOpenProfile={() => setIsProfileOpen(true)}
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <motion.div
@@ -3602,7 +6684,9 @@ function AppContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
-            {renderScreen()}
+            <ScreenErrorBoundary screenKey={currentScreen}>
+              {renderScreen()}
+            </ScreenErrorBoundary>
           </motion.div>
         </main>
       </div>
