@@ -16,6 +16,7 @@
     "db:migrate": "ts-node -r tsconfig-paths/register src/database/migrate.ts",
     "db:migrate:constellation": "ts-node -r tsconfig-paths/register src/database/migrate_constellation.ts",
     "db:seed:constellation": "ts-node -r tsconfig-paths/register src/database/seed_constellation.ts",
+    "db:inspect": "ts-node -r tsconfig-paths/register src/database/inspect_tables.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
