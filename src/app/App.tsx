@@ -3391,20 +3391,51 @@ interface LiveForecast {
 function useWeatherData() {
   const [current, setCurrent] = useState<LiveCurrent | null>(null)
   const [forecast, setForecast] = useState<LiveForecast[]>([])
+  const [correlation, setCorrelation] = useState<{
+    summary?: {
+      rSquared: number;
+      regressionEquation: string;
+      pearsonR: number;
+    };
+    temperatureScatter?: Array<{ temp: number; demand: number; date: string; condition: string }>;
+    rainfallDualAxis?: Array<{ month: string; rainfall: number; nrw: number }>;
+  } | null>(null)
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
   const load = async () => {
     try {
-      const [cRes, fRes] = await Promise.all([
+      const [cRes, fRes, corrRes] = await Promise.all([
         fetch('/api/v1/weather/current'),
         fetch('/api/v1/weather/forecast'),
+        fetch('/api/v1/weather-correlation').catch(() => null),
       ])
       if (!cRes.ok || !fRes.ok) throw new Error('API error')
       const [cJson, fJson] = await Promise.all([cRes.json(), fRes.json()])
       setCurrent(cJson.data)
       setForecast(fJson.data)
+      if (corrRes && corrRes.ok) {
+        try {
+          const corrJson = await corrRes.json()
+          if (corrJson.success && corrJson.data) {
+            setCorrelation({
+              summary: corrJson.data.summary,
+              temperatureScatter: corrJson.data.temperatureScatter?.map((s: any) => ({
+                temp: s.tempCelsius,
+                demand: s.dailyDemandM3,
+                date: s.date,
+                condition: s.condition,
+              })),
+              rainfallDualAxis: corrJson.data.rainfallDualAxis?.map((r: any) => ({
+                month: r.month,
+                rainfall: r.rainfallMm,
+                nrw: r.nrwPercentage,
+              })),
+            })
+          }
+        } catch {}
+      }
       setLastRefresh(new Date())
       setError(null)
     } catch {
@@ -3420,7 +3451,7 @@ function useWeatherData() {
     return () => clearInterval(timer)
   }, [])
 
-  return { current, forecast, loading, error, lastRefresh, refresh: load }
+  return { current, forecast, correlation, loading, error, lastRefresh, refresh: load }
 }
 
 // ─── demand-impact calculator ─────────────────────────────────────────────────
@@ -3433,7 +3464,7 @@ function calcDemandDelta(tempC: number, rainMm: number): number {
 
 // ── SCREEN: WEATHER ────────────────────────────────────────────────────────
 function WeatherScreen() {
-  const { current, forecast, loading, error, lastRefresh, refresh } = useWeatherData()
+  const { current, forecast, correlation, loading, error, lastRefresh, refresh } = useWeatherData()
   const [selectedDay, setSelectedDay] = useState<number>(0)
 
   const WeatherIcon = ({ icon, size = 20 }: { icon: string; size?: number }) => {
@@ -3674,23 +3705,23 @@ function WeatherScreen() {
                   </div>
                 )}
               />
-              <Scatter key="scatter-temp" name="Historical Demand" data={TEMP_DEMAND} fill="#0038A8" opacity={0.7} />
+              <Scatter key="scatter-temp" name="Historical Demand" data={correlation?.temperatureScatter && correlation.temperatureScatter.length > 0 ? correlation.temperatureScatter : TEMP_DEMAND} fill="#0038A8" opacity={0.7} />
               {/* Live current point */}
               {current && (
                 <Scatter key="scatter-live" name="Current Live" data={[{ temp: current.temperature, demand: adjDemand }]} fill="#EF4444" r={6} />
               )}
               <ReferenceLine key="refline-r" stroke="#D32F2F" strokeDasharray="4 3"
                 segment={[{ x: 25, y: 5200 }, { x: 36, y: 10600 }]} strokeWidth={1.5}
-                label={{ value: 'r² = 0.72', fill: '#D32F2F', fontSize: 9, position: 'insideTopRight' }} />
+                label={{ value: correlation?.summary?.rSquared ? `r² = ${correlation.summary.rSquared}` : 'r² = 0.72', fill: '#D32F2F', fontSize: 9, position: 'insideTopRight' }} />
             </ScatterChart>
           </ResponsiveContainer>
-          <p className="text-[10px] text-slate-400 mt-1">Regression: D = 192T − 1,576 (R² = 0.72) · Telemetry correlation window: 2017–2025</p>
+          <p className="text-[10px] text-slate-400 mt-1">{correlation?.summary?.regressionEquation ? `${correlation.summary.regressionEquation} (R² = ${correlation.summary.rSquared}) · Live Supabase dim_weather telemetry` : "Regression: D = 192T − 1,576 (R² = 0.72) · Telemetry correlation window: 2017–2025"}</p>
         </ChartCard>
 
         {/* Dual-axis: Rainfall vs NRW */}
         <ChartCard title="Rainfall vs. NRW Seasonal Pattern">
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart syncId="weather-sync" data={[
+            <ComposedChart syncId="weather-sync" data={correlation?.rainfallDualAxis && correlation.rainfallDualAxis.length > 0 ? correlation.rainfallDualAxis : [
               { month: 'Oct', rainfall: 180, nrw: 27.4 }, { month: 'Nov', rainfall: 220, nrw: 28.1 },
               { month: 'Dec', rainfall: 160, nrw: 27.8 }, { month: 'Jan', rainfall: 40,  nrw: 26.4 },
               { month: 'Feb', rainfall: 20,  nrw: 25.8 }, { month: 'Mar', rainfall: 15,  nrw: 26.2 },

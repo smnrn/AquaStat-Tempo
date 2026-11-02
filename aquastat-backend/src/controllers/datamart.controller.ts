@@ -113,3 +113,4 @@ export async function getWeatherCorrelationHandler(_req: Request, res: Response)
     res.status(500).json({ success: false, error: 'Failed to retrieve weather-demand correlations.' });
   }
 }
+
