@@ -34,12 +34,16 @@ export const pool = new Pool({
 // ─── Pool lifecycle events ────────────────────────────────────────────────────
 
 pool.on('connect', (client) => {
+  // Attach individual client error handler to prevent unhandled error crashes on pooler reset
+  client.on('error', (err) => {
+    logger.debug('[DB] Client connection error caught safely:', { error: err.message });
+  });
+
   // Defer the SET TIME ZONE call until after the connection handshake is complete.
-  // Calling client.query() synchronously in the 'connect' event triggers a
-  // pg deprecation warning ("client is already executing a query") because the
-  // internal authentication query is still in flight at this point.
   setImmediate(() => {
-    void client.query("SET TIME ZONE 'UTC'");
+    client.query("SET TIME ZONE 'UTC'").catch((err) => {
+      logger.debug('[DB] Notice setting time zone on connection:', { error: err.message });
+    });
   });
   logger.debug('[DB] New client connected to PostgreSQL pool.');
 });
