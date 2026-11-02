@@ -284,6 +284,20 @@ async def fp_growth_patterns_api(min_support: float = 0.20, min_confidence: floa
         logger.exception("FP-Growth failed")
         raise HTTPException(status_code=500, detail="FP-Growth mining error")
 
+@app.post("/api/pipeline/trigger-sync", status_code=status.HTTP_200_OK)
+async def trigger_pipeline_sync():
+    """Triggers feature ingestion from dm_water_balance_datamart and writeback to analytics_forecast_output."""
+    try:
+        from pipeline import run_ml_pipeline
+    except ImportError:
+        from intelligence.pipeline import run_ml_pipeline
+    try:
+        run_ml_pipeline()
+        return {"status": "success", "message": "ML inference pipeline executed successfully."}
+    except Exception as e:
+        logger.exception("Pipeline execution failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/", status_code=status.HTTP_200_OK)
 async def root_index():
     return {
