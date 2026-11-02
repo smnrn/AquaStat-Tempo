@@ -157,3 +157,4 @@ if old_hook in content:
     print("SUCCESS: App.tsx wired with live weather-correlation data.")
 else:
     print("ERROR: old_hook not found in App.tsx")
+

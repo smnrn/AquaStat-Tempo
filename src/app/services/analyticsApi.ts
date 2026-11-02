@@ -151,3 +151,4 @@ export const analyticsApi = {
   getDashboard: (refresh = false) =>
     fetchJson<any>(`/dashboard${refresh ? '?refresh=true' : ''}`),
 };
+
