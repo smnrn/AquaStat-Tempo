@@ -37,7 +37,7 @@ export async function getFullDashboard(req: Request, res: Response): Promise<voi
  * GET /api/v1/dashboard/zones
  * Returns zone summary only (lighter endpoint for zone-specific views).
  */
-export async function getZones(req: Request, res: Response): Promise<void> {
+export async function getZones(_req: Request, res: Response): Promise<void> {
   try {
     const zones = await DashboardService.getZoneSummary();
     res.status(StatusCodes.OK).json({
@@ -59,7 +59,7 @@ export async function getZones(req: Request, res: Response): Promise<void> {
  * GET /api/v1/dashboard/kpi
  * Returns KPI summary only.
  */
-export async function getKPI(req: Request, res: Response): Promise<void> {
+export async function getKPI(_req: Request, res: Response): Promise<void> {
   try {
     const kpi = await DashboardService.getDashboardKPI();
     res.status(StatusCodes.OK).json({

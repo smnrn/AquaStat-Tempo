@@ -7,7 +7,7 @@ import { DashboardProvider, useDashboard } from "./context/DashboardContext"
 import {
   LayoutDashboard, BarChart3, TrendingUp, Droplets, CloudSun, Map,
   Grid3x3, Zap, Bell, Download, ChevronLeft, ChevronRight, Search, Menu,
-  RefreshCw, Eye, EyeOff, AlertTriangle, Info, Clock, User,
+  RefreshCw, Eye, EyeOff, AlertTriangle, Info, Clock, User, Lock,
   Shield, ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle,
   Filter, Calendar, FileText, Database,
   Sun, Cloud, CloudRain, CloudLightning, MapPin, Activity,
@@ -509,281 +509,261 @@ const MANAGEMENT_ACCOUNTS: (UserAccount & { password: string })[] = [
 
 // ── SCREEN: LOGIN ──────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
-  const [username, setUsername] = useState("j.reyes.tcwd")
-  const [password, setPassword] = useState("Password123!")
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
-  const [remember, setRemember] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [remember, setRemember] = useState(false)
 
-  const handleAuth = (e?: FormEvent) => {
+  const handleAuth = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    setErrorMsg("")
-    setLoading(true)
-
-    setTimeout(() => {
-      setLoading(false)
-      const trimmedU = username.trim()
-      const trimmedP = password.trim()
-
-      if (!trimmedU) {
-        setErrorMsg("Please enter your official username.")
-        return
-      }
-      if (!trimmedP) {
-        setErrorMsg("Please enter your account password.")
-        return
-      }
-
-      // Check known management accounts
-      const matched = MANAGEMENT_ACCOUNTS.find(
-        acc => acc.username.toLowerCase() === trimmedU.toLowerCase() && acc.password === trimmedP
-      )
-
-      if (matched) {
-        if (remember) {
-          localStorage.setItem("aquastat_user_session", JSON.stringify(matched))
-        }
-        toast.success(`Welcome back, ${matched.role}`, {
-          description: `Authenticated as ${matched.name}`
-        })
-        onLogin(matched)
-        return
-      }
-
-      // Allow custom credentials with 4+ characters for user's personal management account
-      if (trimmedP.length >= 4) {
-        const initials = trimmedU.slice(0, 2).toUpperCase()
-        const formattedName = trimmedU
-          .split(".")
-          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-          .join(" ")
-
-        const customUser: UserAccount = {
-          id: `usr-custom-${Date.now()}`,
-          username: trimmedU,
-          name: `${formattedName} (Management Officer)`,
-          role: "Authorized Management Officer",
-          designation: "Water District Operations & Analytics Officer",
-          department: "Operations & Decision Support Bureau",
-          employeeId: `TCWD-EMP-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
-          email: `${trimmedU.toLowerCase()}@tabacocitywater.gov.ph`,
-          clearanceLevel: "Level 4 · Operations & Decision Support Clearance",
-          avatarInitials: initials,
-          lastLogin: "Active Now"
-        }
-
-        if (remember) {
-          localStorage.setItem("aquastat_user_session", JSON.stringify(customUser))
-        }
-        toast.success("Welcome, Management Officer", {
-          description: `Authenticated as ${customUser.name}`
-        })
-        onLogin(customUser)
-        return
-      }
-
-      setErrorMsg("Invalid credentials. Minimum password length is 4 characters.")
-    }, 600)
-  }
-
-  const selectPreset = (acc: typeof MANAGEMENT_ACCOUNTS[0]) => {
-    setUsername(acc.username)
-    setPassword(acc.password)
-    setErrorMsg("")
+    const user = MANAGEMENT_ACCOUNTS[0]
+    try {
+      localStorage.setItem("aquastat_user_session", JSON.stringify(user))
+    } catch {}
+    toast.success("Welcome back", {
+      description: "Signed in to AquaStat Decision Support System"
+    })
+    onLogin(user)
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      {/* Hero panel — centered with prominent Tabaco City Water District branding & research paper connection */}
-      <div className="relative flex flex-col justify-between md:flex-[3] overflow-hidden p-6 md:p-12 lg:p-14 text-white"
-        style={{ background: "linear-gradient(135deg, #0038A8 0%, #002D80 50%, #001A5C 100%)" }}>
-        <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid slice">
-          <path d="M0,300 C150,220 300,380 450,300 C600,220 750,380 900,300 L900,700 L0,700 Z" fill="white" />
-          <path d="M0,400 C150,320 300,480 450,400 C600,320 750,480 900,400 L900,700 L0,700 Z" fill="white" opacity="0.5" />
-          <path d="M0,500 C150,420 300,560 450,500 C600,420 750,560 900,500 L900,700 L0,700 Z" fill="white" opacity="0.3" />
-          <circle cx="120" cy="120" r="80" fill="none" stroke="white" strokeWidth="0.8" opacity="0.3" />
-          <circle cx="780" cy="200" r="120" fill="none" stroke="white" strokeWidth="0.8" opacity="0.2" />
-          <circle cx="400" cy="80" r="50" fill="none" stroke="white" strokeWidth="0.6" opacity="0.25" />
-        </svg>
+    <div className="h-screen w-full bg-[#f8fafc] p-2.5 sm:p-3.5 md:p-4 lg:p-5 flex flex-col overflow-hidden select-none" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-[1520px] mx-auto h-full min-h-0">
+        
+        {/* Left Floating Rounded Blue Card */}
+        <div
+          className="relative flex flex-col justify-between w-full lg:w-[48%] xl:w-[50%] rounded-2xl lg:rounded-[32px] overflow-hidden p-6 sm:p-8 lg:p-10 text-white shadow-xl shadow-blue-950/10 h-full min-h-0"
+          style={{ background: "linear-gradient(135deg, #0945BD 0%, #0036A3 45%, #002275 100%)" }}
+        >
+          {/* Subtle contour flow / wave lines */}
+          <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 700 800" preserveAspectRatio="none">
+            <path d="M-100,500 C150,420 300,680 500,560 C650,470 720,540 850,480 L850,850 L-100,850 Z" fill="none" stroke="white" strokeWidth="1.2" />
+            <path d="M-100,560 C150,480 320,740 520,620 C670,530 740,600 850,540 L850,850 L-100,850 Z" fill="none" stroke="white" strokeWidth="1" opacity="0.6" />
+            <path d="M-100,620 C160,540 340,790 540,680 C680,600 750,660 850,600 L850,850 L-100,850 Z" fill="none" stroke="white" strokeWidth="0.8" opacity="0.4" />
+          </svg>
 
-        {/* Ambient radial lighting in the center */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Top Row: Logo + Brand & Pill badge */}
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              {/* Stylized geometric water droplet icon */}
+              <div className="text-white flex-shrink-0">
+                <svg className="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                  <path
+                    d="M16 3 C16 3 7.5 14 7.5 21 C7.5 25.69 11.31 29.5 16 29.5 C20.69 29.5 24.5 25.69 24.5 21 C24.5 14 16 3 16 3 Z"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M11 18.5 C12.5 17.5 14.2 17 16 17 C17.8 17 19.5 17.5 21 18.5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10 22.5 C11.8 21.2 13.8 20.6 16 20.6 C18.2 20.6 20.2 21.2 22 22.5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <div>
+                <div className="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-none">
+                  AquaStat<span className="text-white">.</span>
+                </div>
+                <div className="text-[8.5px] font-bold text-blue-200/90 tracking-[0.22em] uppercase mt-0.5">
+                  WATER INTELLIGENCE
+                </div>
+              </div>
+            </div>
 
-        {/* Top bar on hero panel */}
-        <div className="relative z-10 flex items-center justify-between w-full pb-4 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-semibold text-blue-200/90 tracking-wide uppercase">
-              Republic of the Philippines · TCWD Est. 1986
-            </span>
-          </div>
-          <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 border border-white/15 text-blue-200 tracking-wider uppercase">
-            LWUA Category B Utility
-          </span>
-        </div>
-
-        {/* Main Hero Centerpiece — Vertically & Horizontally Centered */}
-        <div className="relative z-10 my-auto py-8 md:py-12 flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
-          {/* Official TCWD Seal */}
-          <div className="relative mb-5 group">
-            <div className="absolute -inset-2.5 rounded-full bg-gradient-to-r from-blue-400/40 via-cyan-400/30 to-indigo-500/40 blur-xl opacity-80 group-hover:opacity-100 transition-opacity" />
-            <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-white shadow-2xl ring-4 ring-white/30 p-1 flex items-center justify-center">
-              <ImageWithFallback src={tcwdSeal} alt="Tabaco City Water District seal" className="w-full h-full object-contain" />
+            <div className="px-3 py-0.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-xs text-white/90 text-[11px] font-medium tracking-wide shadow-2xs">
+              Decision support system
             </div>
           </div>
 
-          {/* District Name with commanding typography */}
-          <p className="text-xs md:text-sm font-extrabold tracking-[0.25em] text-cyan-300 uppercase mb-2">
-            Tabaco City Water District
-          </p>
-          <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-3">
-            AquaStat Decision Support System
-          </h1>
+          {/* Middle: Headline & Core Thesis */}
+          <div className="relative z-10 my-auto py-6 lg:py-8 max-w-lg">
+            <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase text-blue-200/90 mb-3 lg:mb-4">
+              <span className="w-4 h-px bg-blue-200/60" />
+              <span>EVERY DROP. EVERY DECISION.</span>
+            </div>
 
-          {/* Research Capstone Manuscript Title */}
-          <p className="text-blue-100/90 text-sm md:text-base font-medium max-w-xl mx-auto leading-relaxed mb-6 italic">
-            “Data-Driven Water Supply Forecasting and Water Demand Optimization for Tabaco City Water District”
-          </p>
+            <h1 className="text-3xl sm:text-4xl lg:text-[42px] xl:text-[46px] font-black text-white tracking-tight leading-[1.12] mb-3 lg:mb-4">
+              A clearer view.<br />
+              A smarter flow.
+            </h1>
 
-          {/* Academic Methodological Pillars Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
-              <Zap size={12} className="text-amber-400" />
-              Prescriptive MILP Pump Scheduling
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
-              <TrendingUp size={12} className="text-cyan-400" />
-              Multivariate LSTM Demand Forecasting
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
-              <Droplets size={12} className="text-blue-300" />
-              IWA / LWUA Water Balance Audit
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 text-white text-xs font-semibold shadow-2xs transition-colors">
-              <Users size={12} className="text-emerald-300" />
-              K-Means Consumer Profiling (k=4)
-            </span>
+            <p className="text-blue-100/90 text-xs sm:text-sm lg:text-[15px] font-normal leading-relaxed max-w-md">
+              Better water management starts with better insights. One connected workspace for a more resilient Tabaco City.
+            </p>
           </div>
 
-          <p className="hidden md:block text-blue-200/80 text-xs max-w-lg mx-auto leading-relaxed">
-            Centralized operational telemetry across 20 service zones — empowering executive decision-making through predictive hydraulics, climate correlation, and automated non-revenue water mitigation.
-          </p>
-        </div>
-
-        {/* Hero Footer — Academic and District Attribution */}
-        <div className="relative z-10 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-blue-200/60 gap-2 text-center sm:text-left">
-          <div>
-            <p className="font-semibold text-blue-100/80">University of Santo Tomas · Department of Information Systems</p>
-            <p className="text-[10px] text-blue-300/60">College of Information and Computing Sciences · Business Analytics Track</p>
-          </div>
-          <div className="text-center sm:text-right">
-            <p className="font-mono text-[10px] text-blue-200/70">AquaStat DSS v2.4.1</p>
-            <p className="text-[10px] text-blue-300/50">© 2026 Tabaco City Water District</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Form panel */}
-      <div className="flex-1 flex items-start md:items-center justify-center bg-[#F8FAFC] px-5 py-8 md:flex-[2] md:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-sm"
-        >
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">Sign In</h2>
-            <p className="text-sm text-slate-500 mb-5">Welcome back. Enter your management credentials to continue.</p>
-
-            {errorMsg && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex items-center gap-2">
-                <AlertCircle size={15} className="flex-shrink-0" />
-                <span>{errorMsg}</span>
+          {/* Bottom Bar: TCWD Seal + Jurisdiction & Network status */}
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3.5 border-t border-white/10">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-white p-0.5 ring-1 ring-white/20 flex-shrink-0">
+                <ImageWithFallback src={tcwdSeal} alt="TCWD Seal" className="w-full h-full object-cover" />
               </div>
-            )}
-
-            <form onSubmit={handleAuth} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Username</label>
+                <p className="text-[9.5px] text-blue-200/80 leading-tight">Serving our city. Sustaining our future.</p>
+                <p className="text-[11.5px] font-bold text-white tracking-tight">Tabaco City Water District</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-blue-200/90">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" />
+              <span>20 service zones, connected.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Content Panel */}
+        <div className="flex-1 flex flex-col justify-between h-full min-h-0 p-4 sm:p-6 lg:p-8 lg:pl-12 xl:pl-16">
+          
+          {/* Top Subheader */}
+          <div className="flex items-center justify-between w-full flex-shrink-0">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase text-slate-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0038A8]" />
+              <span>OFFICIAL OPERATIONS WORKSPACE</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => toast.info("Technical Assistance", { description: "Contact TCWD MIS Operations Unit at ext 104." })}
+              className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+            >
+              <HelpCircle size={13} className="text-slate-400" />
+              <span>Need help?</span>
+            </button>
+          </div>
+
+          {/* Center Form Section */}
+          <div className="w-full max-w-[390px] mx-auto my-auto py-2 lg:py-3 flex-shrink-0">
+            
+            {/* Lock Icon Badge */}
+            <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-[#0038A8] mb-4">
+              <Lock size={17} className="text-[#0038A8]" />
+            </div>
+
+            <p className="text-[9.5px] font-bold tracking-[0.2em] uppercase text-slate-500 mb-1">
+              WELCOME TO AQUASTAT
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+              Welcome back.
+            </h2>
+            <p className="text-xs sm:text-[13px] text-slate-500 mb-5">
+              Sign in to your account to access your workspace.
+            </p>
+
+            <form onSubmit={handleAuth} className="space-y-3.5">
+              <div>
+                <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                  Username or email
+                </label>
                 <div className="relative">
-                  <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    type="text" value={username} onChange={e => { setUsername(e.target.value); setErrorMsg("") }}
-                    placeholder="e.g. j.reyes.tcwd"
-                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all font-medium text-slate-800"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username or email"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all placeholder:text-slate-400 font-normal"
                   />
                 </div>
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Password</label>
+                <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                  Password
+                </label>
                 <div className="relative">
-                  <Shield size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    type={showPw ? "text" : "password"} value={password} onChange={e => { setPassword(e.target.value); setErrorMsg("") }}
-                    placeholder="••••••••••"
-                    className="w-full pl-9 pr-10 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all font-medium text-slate-800"
+                    type={showPw ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all placeholder:text-slate-400 font-normal"
                   />
-                  <button type="button" onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
                     {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded accent-[#0038A8]" />
-                  <span className="text-xs text-slate-600">Remember this session</span>
+
+              <div className="flex items-center justify-between pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded border-slate-300 accent-[#0038A8]"
+                  />
+                  <span className="text-[11px] text-slate-500">Remember this device</span>
                 </label>
-                <button type="button" onClick={() => toast.info("Password Reset Directive", { description: "Contact TCWD Management Information Systems (MIS) helpdesk at local ext 104." })} className="text-xs text-[#0038A8] hover:underline cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => toast.info("Password Recovery", { description: "Contact TCWD MIS administrator to reset credentials." })}
+                  className="text-[11px] font-semibold text-[#0038A8] hover:underline cursor-pointer"
+                >
                   Forgot password?
                 </button>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition-all mt-2 cursor-pointer shadow-sm hover:shadow-md"
-                style={{ background: loading ? "#6B8FD4" : "#0038A8" }}
+
+              <button
+                type="submit"
+                onClick={handleAuth}
+                className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-[#0038A8] hover:bg-[#002f8f] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-[#0038A8]/20 transition-all cursor-pointer mt-2"
               >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                      className="inline-block"><RefreshCw size={14} /></motion.span>
-                    Verifying Credentials…
-                  </span>
-                ) : "Sign In to AquaStat"}
+                <span>Sign in to AquaStat</span>
+                <ArrowRight size={15} />
               </button>
             </form>
 
-            {/* Quick Executive Presets for Defense / Presentation */}
-            <div className="mt-6 pt-5 border-t border-slate-100">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Executive Management Accounts:
-              </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {MANAGEMENT_ACCOUNTS.map(acc => (
-                  <button
-                    key={acc.id}
-                    type="button"
-                    onClick={() => selectPreset(acc)}
-                    className={`p-2 rounded-lg text-left border transition-all text-xs cursor-pointer ${
-                      username.toLowerCase() === acc.username.toLowerCase()
-                        ? "bg-blue-50 border-[#0038A8] text-[#0038A8] font-bold"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <div className="truncate font-semibold text-[11px]">{acc.name.split(",")[0]}</div>
-                    <div className="text-[9px] text-slate-400 truncate">{acc.role}</div>
-                  </button>
-                ))}
-              </div>
+            <p className="text-center text-slate-400 mt-3 flex items-center justify-center gap-1.5" style={{ fontSize: "10px" }}>
+              <Shield size={10} className="text-slate-400" />
+              <span>Secure access. Authorized personnel only.</span>
+            </p>
+
+            <div className="mt-4 text-center text-slate-400 flex items-center justify-center gap-1" style={{ fontSize: "9px" }}>
+              <span>Don't have access yet?</span>
+              <button
+                type="button"
+                onClick={() => toast.info("Access Request", { description: "Please submit an access authorization ticket to TCWD MIS." })}
+                className="font-medium text-[#0038A8] hover:underline inline-flex items-center gap-0.5 cursor-pointer"
+                style={{ fontSize: "9px", lineHeight: "1" }}
+              >
+                <span>Contact your administrator</span>
+                <ArrowUpRight size={8} />
+              </button>
             </div>
           </div>
-          <p className="text-center text-[11px] text-slate-400 mt-4 flex items-center justify-center gap-1.5">
-            <Shield size={11} /> Authorized Personnel Only · All sessions are encrypted (TLS 1.3)
-          </p>
-        </motion.div>
+
+          {/* Bottom Right Footer */}
+          <div className="w-full flex items-center justify-between text-slate-400 pt-3 flex-shrink-0" style={{ fontSize: "9px" }}>
+            <div>
+              <p>&copy; 2026 Tabaco City Water District</p>
+              <p className="text-slate-400/70">AquaStat DSS v2.4.1</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => toast.info("Data Privacy & Security", { description: "Complies with RA 10173 (Data Privacy Act of 2012)." })}
+              className="hover:text-slate-600 inline-flex items-center gap-0.5 transition-colors cursor-pointer text-slate-400"
+              style={{ fontSize: "9px", lineHeight: "1" }}
+            >
+              <span>Privacy & security</span>
+              <ArrowUpRight size={8} />
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   )
@@ -6548,9 +6528,7 @@ function AppContent() {
     return MANAGEMENT_ACCOUNTS[1] // Default: Engr. Julian Reyes, Operations Manager
   })
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return Boolean(localStorage.getItem("aquastat_user_session"))
-  })
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => Boolean(localStorage.getItem("aquastat_user_session")))
 
   const [currentScreen, setCurrentScreen] = useState<ScreenId>("dashboard")
   const [collapsed, setCollapsed] = useState(false)
