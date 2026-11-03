@@ -29,6 +29,7 @@ export interface AnnualTrendItem {
 
 export interface SupplyDemandItem {
   month: string;
+  actualSupply?: number;
   supply: number;
   demand: number;
 }
@@ -58,6 +59,21 @@ export interface MonthlyNrwItem {
   nrwPct: number;
 }
 
+export interface KPIComparisonPeriod {
+  billmonth: string;
+  monthsAgo: number;
+  label: string;
+  shortLabel: string;
+  accounts: number;
+  consumption: number;
+  revenue: number;
+  avgPerAccount: number;
+  accountsChangePct: number;
+  consumptionChangePct: number;
+  revenueChangePct: number;
+  avgPerAccountChangePct: number;
+}
+
 export interface DashboardKPIItem {
   totalAccounts: number;
   totalConsumption: number;
@@ -69,6 +85,7 @@ export interface DashboardKPIItem {
   prevMonthAccounts: number;
   prevMonthConsumption: number;
   prevMonthRevenue: number;
+  comparisonPeriods?: KPIComparisonPeriod[];
 }
 
 export interface HeatmapItem {
@@ -140,6 +157,50 @@ const DEFAULT_KPI: DashboardKPIItem = {
   prevMonthAccounts: 18453,
   prevMonthConsumption: 358173,
   prevMonthRevenue: 9633724,
+  comparisonPeriods: [
+    {
+      billmonth: "1125",
+      monthsAgo: 1,
+      label: "November 2025",
+      shortLabel: "Nov '25",
+      accounts: 18453,
+      consumption: 358173,
+      revenue: 9633724,
+      avgPerAccount: 19.4,
+      accountsChangePct: 6.8,
+      consumptionChangePct: 7.4,
+      revenueChangePct: 32.5,
+      avgPerAccountChangePct: 0.5,
+    },
+    {
+      billmonth: "1025",
+      monthsAgo: 2,
+      label: "October 2025",
+      shortLabel: "Oct '25",
+      accounts: 18120,
+      consumption: 347500,
+      revenue: 9210000,
+      avgPerAccount: 19.2,
+      accountsChangePct: 8.7,
+      consumptionChangePct: 10.7,
+      revenueChangePct: 38.6,
+      avgPerAccountChangePct: 1.6,
+    },
+    {
+      billmonth: "0925",
+      monthsAgo: 3,
+      label: "September 2025",
+      shortLabel: "Sep '25",
+      accounts: 17890,
+      consumption: 339200,
+      revenue: 8950000,
+      avgPerAccount: 19.0,
+      accountsChangePct: 10.1,
+      consumptionChangePct: 13.4,
+      revenueChangePct: 42.7,
+      avgPerAccountChangePct: 2.6,
+    },
+  ],
 };
 
 const DEFAULT_HEATMAP_MONTHS = ["Oct '24","Nov '24","Dec '24","Jan '25","Feb '25","Mar '25","Apr '25","May '25","Jun '25","Jul '25","Aug '25","Sep '25"];

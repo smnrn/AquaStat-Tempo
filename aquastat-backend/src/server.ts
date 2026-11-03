@@ -108,10 +108,9 @@ async function bootstrap(): Promise<void> {
   });
 
   process.on('unhandledRejection', (reason: unknown) => {
-    logger.error('[Server] Unhandled promise rejection — shutting down.', {
+    logger.warn('[Server] Unhandled promise rejection intercepted (server remains online):', {
       reason: reason instanceof Error ? reason.message : String(reason),
     });
-    shutdown('unhandledRejection');
   });
 }
 
