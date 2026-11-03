@@ -1723,16 +1723,32 @@ function DashboardScreen({ onNavigate }: { onNavigate?: (s: ScreenId) => void })
                 </linearGradient>
               </defs>
             </svg>
+            <div className="flex items-center justify-between text-[11px] mb-2 px-1">
+              <div className="flex items-center gap-4">
+                <span className="inline-flex items-center gap-1.5 text-slate-600 font-medium">
+                  <span className="w-2.5 h-2.5 rounded-xs bg-[#0038A8]" />
+                  Billed Consumption (m³)
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-amber-600 font-medium">
+                  <span className="w-3 h-0.5 border-t-2 border-dashed border-[#F59E0B]" />
+                  NRW Loss (%)
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">Dual-Axis: m³ (L) · % (R)</span>
+            </div>
             <ResponsiveContainer width="100%" height={200}>
-              <ComposedChart data={annualTrend} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
+              <ComposedChart data={annualTrend} margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
                 <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
                 <XAxis key="xaxis" dataKey="year" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                <YAxis key="yaxis" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false}
+                <YAxis key="yaxis-left" yAxisId="left" orientation="left" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false}
                   tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                <YAxis key="yaxis-right" yAxisId="right" orientation="right" domain={[0, 50]} ticks={[0, 10, 20, 30, 40, 50]}
+                  width={36} tick={{ fontSize: 10, fill: "#D97706" }} axisLine={false} tickLine={false}
+                  tickFormatter={v => `${v}%`} />
                 <RTooltip key="tooltip" content={(p: any) => <ChartTip {...p} fmt={(v,n) => n.includes("NRW") ? `${v}%` : `${v.toLocaleString()} m³`} />} />
-                <Area key="area-consumption" type="monotone" dataKey="consumption" name="Consumption m³" stroke="#0038A8" strokeWidth={2.5}
+                <Area key="area-consumption" yAxisId="left" type="monotone" dataKey="consumption" name="Consumption m³" stroke="#0038A8" strokeWidth={2.5}
                   fill="url(#consGrad)" dot={{ fill: "#0038A8", r: 3, strokeWidth: 0 }} activeDot={false} />
-                <Line key="line-nrw" type="monotone" dataKey="nrw" name="NRW %" stroke="#F59E0B" strokeWidth={2} strokeDasharray="5 3"
+                <Line key="line-nrw" yAxisId="right" type="monotone" dataKey="nrw" name="NRW %" stroke="#F59E0B" strokeWidth={2} strokeDasharray="5 3"
                   dot={{ fill: "#F59E0B", r: 2.5, strokeWidth: 0 }} activeDot={false} />
               </ComposedChart>
             </ResponsiveContainer>
