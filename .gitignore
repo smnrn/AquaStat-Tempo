@@ -59,3 +59,7 @@ Thumbs.db
 *.ntvs*
 *.njsproj
 *.sln
+
+models/
+*.keras
+*.pkl
