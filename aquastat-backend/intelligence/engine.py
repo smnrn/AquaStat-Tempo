@@ -32,18 +32,22 @@ try:
 except ImportError:
     pass
 
-# Supabase AWS Pooler connection URL (Session mode on port 5432)
+# Supabase AWS Pooler connection URLs (Port 5432 for Session Mode, Port 6543 for Transaction Mode)
 DEFAULT_POOLER_URI = "postgresql://postgres.liwjkumbuzfdsfngaddt:CapstoneProj26%2F27@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres"
 
-if os.getenv("DB_HOST") and os.getenv("DB_USER") and os.getenv("DB_PASSWORD"):
-    db_user = os.getenv("DB_USER")
-    db_pass = urllib.parse.quote(os.getenv("DB_PASSWORD", ""), safe="")
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT", "5432")
-    db_name = os.getenv("DB_NAME", "postgres")
-    SUPABASE_DB_URI = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-else:
-    SUPABASE_DB_URI = os.getenv("DATABASE_URL", DEFAULT_POOLER_URI)
+def resolve_db_uri() -> str:
+    if os.getenv("DATABASE_URL"):
+        return os.getenv("DATABASE_URL")
+    if os.getenv("DB_HOST") and os.getenv("DB_USER") and os.getenv("DB_PASSWORD"):
+        db_user = os.getenv("DB_USER")
+        db_pass = urllib.parse.quote(os.getenv("DB_PASSWORD", ""), safe="")
+        db_host = os.getenv("DB_HOST")
+        db_port = os.getenv("DB_PORT", "5432")
+        db_name = os.getenv("DB_NAME", "postgres")
+        return f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+    return DEFAULT_POOLER_URI
+
+SUPABASE_DB_URI = resolve_db_uri()
 
 
 class AquaStatIntelligenceEngine:
@@ -52,13 +56,28 @@ class AquaStatIntelligenceEngine:
     for Tabaco City Water District (TCWD).
     """
 
-    def __init__(self, db_uri: str = SUPABASE_DB_URI):
-        self.db_uri = db_uri
+    def __init__(self, db_uri: str = None):
+        self.db_uri = db_uri or resolve_db_uri()
 
     def get_connection(self):
-        conn = psycopg2.connect(self.db_uri)
-        conn.autocommit = True
-        return conn
+        try:
+            conn = psycopg2.connect(self.db_uri)
+            conn.autocommit = True
+            return conn
+        except Exception as primary_err:
+            if ":5432/" in self.db_uri:
+                fallback_uri = self.db_uri.replace(":5432/", ":6543/")
+            elif ":6543/" in self.db_uri:
+                fallback_uri = self.db_uri.replace(":6543/", ":5432/")
+            else:
+                raise primary_err
+            try:
+                conn = psycopg2.connect(fallback_uri)
+                conn.autocommit = True
+                self.db_uri = fallback_uri
+                return conn
+            except Exception:
+                raise primary_err
 
     # ==========================================================================
     # 1. GOLD LAYER DATA EXTRACTION & FEATURE STORE PIPELINE
@@ -558,7 +577,7 @@ class AquaStatIntelligenceEngine:
                 float(r["predicted_loss_m3"]), float(r["predicted_shortage_m3"]),
                 float(r["ci_lower_m3"]), float(r["ci_upper_m3"]),
                 float(r["rmse_score"]), float(r["mae_score"]), float(r["mape_score"]),
-                bool(r["autonomous_alert"])
+                bool(r["autonomous_alert"]), bool(r["is_champion_model"])
             ))
 
         # B. Run Zonal Forecasts for All Service Zones
@@ -574,7 +593,7 @@ class AquaStatIntelligenceEngine:
                     float(r["predicted_loss_m3"]), float(r["predicted_shortage_m3"]),
                     float(r["ci_lower_m3"]), float(r["ci_upper_m3"]),
                     float(r["rmse_score"]), float(r["mae_score"]), float(r["mape_score"]),
-                    bool(r["autonomous_alert"])
+                    bool(r["autonomous_alert"]), bool(r["is_champion_model"])
                 ))
 
         # C. Run Linear Programming Pump Dispatch Optimizer
@@ -602,7 +621,7 @@ class AquaStatIntelligenceEngine:
                         predicted_loss_m3, predicted_shortage_m3,
                         ci_lower_m3, ci_upper_m3,
                         rmse_score, mae_score, mape_score,
-                        autonomous_alert
+                        autonomous_alert, is_champion_model
                     ) VALUES %s
                     ON CONFLICT (target_time_id, algorithm_name, (COALESCE(location_id, 0))) DO UPDATE SET
                         predicted_demand_m3 = EXCLUDED.predicted_demand_m3,
@@ -615,6 +634,7 @@ class AquaStatIntelligenceEngine:
                         mae_score = EXCLUDED.mae_score,
                         mape_score = EXCLUDED.mape_score,
                         autonomous_alert = EXCLUDED.autonomous_alert,
+                        is_champion_model = EXCLUDED.is_champion_model,
                         created_at = now();
                 """, all_forecast_rows, page_size=500)
 
