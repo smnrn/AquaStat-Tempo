@@ -185,7 +185,7 @@ app.add_middleware(
 # ==============================================================================
 
 @app.get("/api/v1/health")
-def v1_health_check():
+def health_check():
     return {"status": "operational", "engine": "AquaStat-Intelligence-v2"}
 
 
@@ -198,7 +198,7 @@ def trigger_intelligence_pipeline(horizon: int = Query(12, ge=1, le=24)):
 
 @app.get("/api/v1/intelligence/supply-demand-forecast")
 def get_supply_demand_forecast(
-    algorithm: str = Query("XGBoost", description="SARIMAX | XGBoost | LSTM | Prophet | Ensemble"),
+    algorithm: str = Query("XGBoost", description="SARIMAX | XGBoost | LSTM"),
     location_id: int | None = Query(None, description="NULL for City-Wide Macro, or specific location_id")
 ):
     """
@@ -220,8 +220,7 @@ def get_supply_demand_forecast(
             """
             fc_q = """
                 SELECT f.target_time_id AS time_id, dt.year_month,
-                       f.algorithm_name,
-                       (f.algorithm_name = 'Ensemble') AS is_champion_model,
+                       f.algorithm_name, f.is_champion_model,
                        f.predicted_supply_m3 AS sustainable_supply_m3,
                        f.predicted_demand_m3 AS net_billed_demand_m3,
                        f.predicted_loss_m3 AS nrw_loss_m3,
@@ -249,8 +248,7 @@ def get_supply_demand_forecast(
             """
             fc_q = """
                 SELECT f.target_time_id AS time_id, dt.year_month,
-                       f.algorithm_name,
-                       (f.algorithm_name = 'Ensemble') AS is_champion_model,
+                       f.algorithm_name, f.is_champion_model,
                        f.predicted_supply_m3 AS sustainable_supply_m3,
                        f.predicted_demand_m3 AS net_billed_demand_m3,
                        f.predicted_loss_m3 AS nrw_loss_m3,
@@ -350,6 +348,65 @@ def get_prescriptive_schedule(target_time_id: int | None = Query(None)):
         "total_recommended_volume_m3": round(float(df_sched["recommended_volume_m3"].sum()), 2),
         "total_projected_power_cost_php": round(float(df_sched["projected_power_cost_php"].sum()), 2),
         "schedules": df_sched.to_dict(orient="records")
+    }
+
+
+@app.api_route("/api/v1/intelligence/simulate-climate-stress", methods=["GET", "POST"])
+def simulate_climate_stress(
+    temp_delta_c: float = Query(2.0, description="Temperature anomaly in °C (e.g., +1.5, +2.0, +3.0)"),
+    rainfall_pct_delta: float = Query(-20.0, description="Precipitation change % (e.g., -20.0 for drought, +25.0 for monsoon)"),
+    algorithm: str = Query("XGBoost", description="SARIMAX | XGBoost | LSTM")
+):
+    """
+    Simulates What-If climate stress scenarios on TCWD water balance.
+    Projects altered consumer demand via meteorological regression and stresses source production.
+    """
+    corr = get_weather_correlation()
+    slope = corr["regression"]["slope"]
+    monthly_demand_delta_m3 = round(slope * temp_delta_c * 30.0, 2)
+
+    baseline = get_supply_demand_forecast(algorithm=algorithm, location_id=None)
+    fc_series = baseline.get("forecast", [])
+
+    stressed_series = []
+    for item in fc_series:
+        base_demand = float(item.get("net_billed_demand_m3") or 0)
+        base_supply = float(item.get("sustainable_supply_m3") or 0)
+        base_loss = float(item.get("nrw_loss_m3") or 0)
+
+        stressed_demand = round(base_demand + monthly_demand_delta_m3, 2)
+        supply_factor = max(0.1, 1.0 + (rainfall_pct_delta / 100.0) * 0.40)
+        stressed_supply = round(max(base_supply * supply_factor, 0.0), 2)
+        gross_required = round(stressed_demand + base_loss, 2)
+        shortage = round(max(gross_required - stressed_supply, 0.0), 2)
+        deficit_pct = round((shortage / gross_required) * 100.0, 2) if gross_required > 0 else 0.0
+
+        stressed_series.append({
+            "time_id": item["time_id"],
+            "year_month": item["year_month"],
+            "baseline_demand_m3": base_demand,
+            "stressed_demand_m3": stressed_demand,
+            "demand_delta_m3": monthly_demand_delta_m3,
+            "baseline_supply_m3": base_supply,
+            "stressed_supply_m3": stressed_supply,
+            "supply_delta_m3": round(stressed_supply - base_supply, 2),
+            "nrw_loss_m3": base_loss,
+            "gross_required_m3": gross_required,
+            "projected_shortage_m3": shortage,
+            "shortage_deficit_pct": deficit_pct,
+            "stress_alert": "CRITICAL_DEFICIT" if deficit_pct >= 15.0 else ("MODERATE_SHORTAGE" if deficit_pct > 0 else "NORMAL")
+        })
+
+    return {
+        "status": "success",
+        "scenario": {
+            "temp_delta_celsius": temp_delta_c,
+            "rainfall_pct_delta": rainfall_pct_delta,
+            "algorithm": algorithm,
+            "demand_sensitivity_slope_daily": slope,
+            "monthly_demand_impact_m3": monthly_demand_delta_m3
+        },
+        "simulation_results": stressed_series
     }
 
 

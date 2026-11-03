@@ -408,6 +408,7 @@ export async function getLiveForecastData(): Promise<ForecastResponsePayload> {
       dt.month_number
      FROM public.analytics_forecast_output f
      JOIN public.dim_time dt ON f.target_time_id = dt.time_id
+     WHERE f.location_id IS NULL
      ORDER BY dt.year ASC, dt.month_number ASC, f.algorithm_name ASC;`
   );
 
