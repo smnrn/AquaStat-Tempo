@@ -48,7 +48,7 @@ async function bootstrap(): Promise<void> {
   const server = http.createServer(app);
 
   // 4. Start listening
-  server.listen(config.port, () => {
+  server.listen(config.port, '0.0.0.0', () => {
     logger.info(
       `[Server] Listening on http://localhost:${config.port}` +
         `${config.apiBasePath}/${config.apiVersion}`

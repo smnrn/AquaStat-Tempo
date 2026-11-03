@@ -179,23 +179,56 @@ interface AnnualTrend {
 export async function getAnnualTrend(): Promise<AnnualTrend[]> {
   logger.info('[DashboardService] Fetching annual trend...');
 
-  const result = await query<{
-    year: number;
-    ytd_billed_m3: string;
-    operating_revenue_ytd_php: string;
-    ytd_nrw_pct: string;
-  }>(
-    `SELECT year, ytd_billed_m3::text, operating_revenue_ytd_php::text, ytd_nrw_pct::text
-     FROM ref_mds_annual_summary
-     ORDER BY year;`
-  );
+  try {
+    const result = await query<{
+      year: number;
+      ytd_billed_m3: string;
+      operating_revenue_ytd_php: string;
+      ytd_nrw_pct: string;
+    }>(
+      `SELECT year, ytd_billed_m3::text, operating_revenue_ytd_php::text, ytd_nrw_pct::text
+       FROM public.ref_mds_annual_summary
+       ORDER BY year;`
+    );
 
-  return result.rows.map((r) => ({
-    year: String(r.year),
-    consumption: Math.round(parseFloat(r.ytd_billed_m3)),
-    revenue: Math.round(parseFloat(r.operating_revenue_ytd_php)),
-    nrw: parseFloat(parseFloat(r.ytd_nrw_pct).toFixed(1)),
-  }));
+    return result.rows.map((r) => ({
+      year: String(r.year),
+      consumption: Math.round(parseFloat(r.ytd_billed_m3)),
+      revenue: Math.round(parseFloat(r.operating_revenue_ytd_php)),
+      nrw: parseFloat(parseFloat(r.ytd_nrw_pct).toFixed(1)),
+    }));
+  } catch (err) {
+    logger.warn('[DashboardService] Querying ref_mds_annual_summary failed, falling back to ref_mds_monthly aggregation:', err);
+    const fallback = await query<{
+      year: number;
+      ytd_billed_m3: string;
+      operating_revenue_ytd_php: string;
+      ytd_nrw_pct: string;
+    }>(
+      `SELECT 
+         year,
+         ROUND(COALESCE(SUM(billed_volume_m3), 0))::text AS ytd_billed_m3,
+         ROUND(COALESCE(SUM(operating_revenue_php), 0))::text AS operating_revenue_ytd_php,
+         ROUND(
+           CASE 
+             WHEN COALESCE(SUM(produced_volume_m3), 0) > 0 
+             THEN ((SUM(produced_volume_m3) - SUM(billed_volume_m3)) / SUM(produced_volume_m3) * 100.0)
+             ELSE 0.00
+           END, 
+           2
+         )::text AS ytd_nrw_pct
+       FROM public.ref_mds_monthly
+       GROUP BY year
+       ORDER BY year;`
+    );
+
+    return fallback.rows.map((r) => ({
+      year: String(r.year),
+      consumption: Math.round(parseFloat(r.ytd_billed_m3)),
+      revenue: Math.round(parseFloat(r.operating_revenue_ytd_php)),
+      nrw: parseFloat(parseFloat(r.ytd_nrw_pct).toFixed(1)),
+    }));
+  }
 }
 
 // ─── Supply & Demand (with Actual Water Supply, Sustainable Capacity, and Forecasted Demand) ──
@@ -947,28 +980,76 @@ export async function getPredictiveAnalytics(): Promise<PredictiveAnalyticsPaylo
     });
   }
 
-  // Future Forecast months: Jan '26 to Jun '26
-  // Aligned with manuscript Section 3.3.2 and Section 3.6.4 (Figure 3.6.4.1 & 3.6.4.2)
-  const futureForecasts = [
-    { month: "Jan '26", sarima: 198200, lstm: 201800, prophet: 199400, xgboost: 200500, ensemble: 201100, ci_low: 193200, ci_high: 210400 },
-    { month: "Feb '26", sarima: 204500, lstm: 210400, prophet: 206100, xgboost: 208900, ensemble: 209800, ci_low: 199800, ci_high: 221000 },
-    { month: "Mar '26", sarima: 211000, lstm: 218600, prophet: 213500, xgboost: 216200, ensemble: 217400, ci_low: 207200, ci_high: 230000 },
-    { month: "Apr '26", sarima: 214200, lstm: 222800, prophet: 216800, xgboost: 220100, ensemble: 221400, ci_low: 210400, ci_high: 235200 },
-    { month: "May '26", sarima: 208900, lstm: 216400, prophet: 211200, xgboost: 214000, ensemble: 215100, ci_low: 204000, ci_high: 228800 },
-    { month: "Jun '26", sarima: 202100, lstm: 210800, prophet: 204900, xgboost: 208500, ensemble: 209200, ci_low: 198500, ci_high: 223100 },
-  ];
+  // Pull Live Multi-Model Forecasts directly from public.analytics_forecast_output
+  try {
+    const liveForecasts = await query<{
+      target_time_id: number;
+      algorithm_name: string;
+      predicted_demand_m3: string;
+      ci_lower_m3: string;
+      ci_upper_m3: string;
+      year: number;
+      month_number: number;
+    }>(
+      `SELECT 
+        f.target_time_id,
+        f.algorithm_name,
+        f.predicted_demand_m3::text,
+        f.ci_lower_m3::text,
+        f.ci_upper_m3::text,
+        dt.year,
+        dt.month_number
+       FROM public.analytics_forecast_output f
+       JOIN public.dim_time dt ON f.target_time_id = dt.time_id
+       ORDER BY dt.year ASC, dt.month_number ASC;`
+    );
 
-  for (const f of futureForecasts) {
-    forecastData.push({
-      month: f.month,
-      sarima: f.sarima,
-      lstm: f.lstm,
-      prophet: f.prophet,
-      xgboost: f.xgboost,
-      ensemble: f.ensemble,
-      ci_low: f.ci_low,
-      ci_high: f.ci_high,
-    });
+    if (liveForecasts.rows.length > 0) {
+      const liveMap = new Map<number, ForecastDataPoint>();
+      for (const row of liveForecasts.rows) {
+        const tId = row.target_time_id;
+        if (!liveMap.has(tId)) {
+          const label = `${monthNames[row.month_number - 1]} '${String(row.year).slice(2)}`;
+          liveMap.set(tId, { month: label });
+        }
+        const point = liveMap.get(tId)!;
+        const val = Math.round(parseFloat(row.predicted_demand_m3));
+        const algo = row.algorithm_name.toLowerCase();
+        if (algo.includes('sarima')) point.sarima = val;
+        else if (algo.includes('lstm')) point.lstm = val;
+        else if (algo.includes('prophet')) point.prophet = val;
+        else if (algo.includes('xgboost')) point.xgboost = val;
+        else if (algo.includes('ensemble')) {
+          point.ensemble = val;
+          point.ci_low = Math.round(parseFloat(row.ci_lower_m3 || String(val * 0.95)));
+          point.ci_high = Math.round(parseFloat(row.ci_upper_m3 || String(val * 1.05)));
+        }
+      }
+      for (const pt of liveMap.values()) {
+        forecastData.push(pt);
+      }
+    } else {
+      const fallbackForecasts = [
+        { month: "Jan '26", sarima: 198200, lstm: 201800, prophet: 199400, xgboost: 200500, ensemble: 201100, ci_low: 193200, ci_high: 210400 },
+        { month: "Feb '26", sarima: 204500, lstm: 210400, prophet: 206100, xgboost: 208900, ensemble: 209800, ci_low: 199800, ci_high: 221000 },
+        { month: "Mar '26", sarima: 211000, lstm: 218600, prophet: 213500, xgboost: 216200, ensemble: 217400, ci_low: 207200, ci_high: 230000 },
+        { month: "Apr '26", sarima: 214200, lstm: 222800, prophet: 216800, xgboost: 220100, ensemble: 221400, ci_low: 210400, ci_high: 235200 },
+        { month: "May '26", sarima: 208900, lstm: 216400, prophet: 211200, xgboost: 214000, ensemble: 215100, ci_low: 204000, ci_high: 228800 },
+        { month: "Jun '26", sarima: 202100, lstm: 210800, prophet: 204900, xgboost: 208500, ensemble: 209200, ci_low: 198500, ci_high: 223100 },
+      ];
+      for (const f of fallbackForecasts) forecastData.push(f);
+    }
+  } catch (err) {
+    logger.warn('[DashboardService] Live forecast query note, using baseline:', err);
+    const fallbackForecasts = [
+      { month: "Jan '26", sarima: 198200, lstm: 201800, prophet: 199400, xgboost: 200500, ensemble: 201100, ci_low: 193200, ci_high: 210400 },
+      { month: "Feb '26", sarima: 204500, lstm: 210400, prophet: 206100, xgboost: 208900, ensemble: 209800, ci_low: 199800, ci_high: 221000 },
+      { month: "Mar '26", sarima: 211000, lstm: 218600, prophet: 213500, xgboost: 216200, ensemble: 217400, ci_low: 207200, ci_high: 230000 },
+      { month: "Apr '26", sarima: 214200, lstm: 222800, prophet: 216800, xgboost: 220100, ensemble: 221400, ci_low: 210400, ci_high: 235200 },
+      { month: "May '26", sarima: 208900, lstm: 216400, prophet: 211200, xgboost: 214000, ensemble: 215100, ci_low: 204000, ci_high: 228800 },
+      { month: "Jun '26", sarima: 202100, lstm: 210800, prophet: 204900, xgboost: 208500, ensemble: 209200, ci_low: 198500, ci_high: 223100 },
+    ];
+    for (const f of fallbackForecasts) forecastData.push(f);
   }
 
   const modelMetrics: Record<string, ModelMetric> = {

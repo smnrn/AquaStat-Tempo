@@ -534,12 +534,12 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
   }
 
   return (
-    <div className="h-screen w-full bg-[#f8fafc] p-2.5 sm:p-3.5 md:p-4 lg:p-5 flex flex-col overflow-hidden select-none" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-[1520px] mx-auto h-full min-h-0">
+    <div className="min-h-screen lg:h-screen w-full bg-[#f8fafc] p-2 sm:p-2.5 md:p-3 lg:p-3.5 flex flex-col justify-center overflow-y-auto lg:overflow-hidden select-none" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-[1440px] mx-auto h-full min-h-0">
         
         {/* Left Floating Rounded Blue Card */}
         <div
-          className="relative flex flex-col justify-between w-full lg:w-[48%] xl:w-[50%] rounded-2xl lg:rounded-[32px] overflow-hidden p-6 sm:p-8 lg:p-10 text-white shadow-xl shadow-blue-950/10 h-full min-h-0"
+          className="relative flex flex-col justify-between w-full lg:w-[48%] xl:w-[50%] rounded-2xl lg:rounded-[28px] overflow-hidden p-5 sm:p-6 lg:p-7 xl:p-8 text-white shadow-xl shadow-blue-950/10 h-full min-h-0"
           style={{ background: "linear-gradient(135deg, #0945BD 0%, #0036A3 45%, #002275 100%)" }}
         >
           {/* Subtle contour flow / wave lines */}
@@ -551,10 +551,10 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
 
           {/* Top Row: Logo + Brand & Pill badge */}
           <div className="relative z-10 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               {/* Stylized geometric water droplet icon */}
               <div className="text-white flex-shrink-0">
-                <svg className="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 32 32" fill="none">
                   <path
                     d="M16 3 C16 3 7.5 14 7.5 21 C7.5 25.69 11.31 29.5 16 29.5 C20.69 29.5 24.5 25.69 24.5 21 C24.5 14 16 3 16 3 Z"
                     stroke="currentColor"
@@ -577,50 +577,50 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
                 </svg>
               </div>
               <div>
-                <div className="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-none">
+                <div className="text-base sm:text-lg font-extrabold tracking-tight text-white leading-none">
                   AquaStat<span className="text-white">.</span>
                 </div>
-                <div className="text-[8.5px] font-bold text-blue-200/90 tracking-[0.22em] uppercase mt-0.5">
+                <div className="text-[8px] font-bold text-blue-200/90 tracking-[0.2em] uppercase mt-0.5">
                   WATER INTELLIGENCE
                 </div>
               </div>
             </div>
 
-            <div className="px-3 py-0.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-xs text-white/90 text-[11px] font-medium tracking-wide shadow-2xs">
+            <div className="px-2.5 py-0.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-xs text-white/90 text-[10px] font-medium tracking-wide shadow-2xs">
               Decision support system
             </div>
           </div>
 
           {/* Middle: Headline & Core Thesis */}
-          <div className="relative z-10 my-auto py-6 lg:py-8 max-w-lg">
-            <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase text-blue-200/90 mb-3 lg:mb-4">
-              <span className="w-4 h-px bg-blue-200/60" />
+          <div className="relative z-10 my-auto py-2 sm:py-3 lg:py-4 max-w-lg">
+            <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.2em] uppercase text-blue-200/90 mb-2 sm:mb-2.5">
+              <span className="w-3.5 h-px bg-blue-200/60" />
               <span>EVERY DROP. EVERY DECISION.</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-[42px] xl:text-[46px] font-black text-white tracking-tight leading-[1.12] mb-3 lg:mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-[32px] xl:text-[36px] font-black text-white tracking-tight leading-[1.14] mb-2 sm:mb-2.5">
               A clearer view.<br />
               A smarter flow.
             </h1>
 
-            <p className="text-blue-100/90 text-xs sm:text-sm lg:text-[15px] font-normal leading-relaxed max-w-md">
+            <p className="text-blue-100/90 text-xs sm:text-[13px] font-normal leading-relaxed max-w-md">
               Better water management starts with better insights. One connected workspace for a more resilient Tabaco City.
             </p>
           </div>
 
           {/* Bottom Bar: TCWD Seal + Jurisdiction & Network status */}
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3.5 border-t border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-white p-0.5 ring-1 ring-white/20 flex-shrink-0">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2.5 sm:pt-3 border-t border-white/10 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-full overflow-hidden bg-white p-0.5 ring-1 ring-white/20 flex-shrink-0">
                 <ImageWithFallback src={tcwdSeal} alt="TCWD Seal" className="w-full h-full object-cover" />
               </div>
               <div>
-                <p className="text-[9.5px] text-blue-200/80 leading-tight">Serving our city. Sustaining our future.</p>
-                <p className="text-[11.5px] font-bold text-white tracking-tight">Tabaco City Water District</p>
+                <p className="text-[9px] text-blue-200/80 leading-tight">Serving our city. Sustaining our future.</p>
+                <p className="text-[11px] font-bold text-white tracking-tight">Tabaco City Water District</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-blue-200/90">
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[10.5px] font-medium text-blue-200/90">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" />
               <span>20 service zones, connected.</span>
             </div>
@@ -628,11 +628,11 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
         </div>
 
         {/* Right Content Panel */}
-        <div className="flex-1 flex flex-col justify-between h-full min-h-0 p-4 sm:p-6 lg:p-8 lg:pl-12 xl:pl-16">
+        <div className="flex-1 flex flex-col justify-between h-full min-h-0 p-3.5 sm:p-5 lg:p-6 lg:pl-10 xl:pl-12">
           
           {/* Top Subheader */}
           <div className="flex items-center justify-between w-full flex-shrink-0">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase text-slate-500">
+            <div className="flex items-center gap-1.5 text-[9px] sm:text-[9.5px] font-bold tracking-wider uppercase text-slate-500">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0038A8]" />
               <span>OFFICIAL OPERATIONS WORKSPACE</span>
             </div>
@@ -640,67 +640,67 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
             <button
               type="button"
               onClick={() => toast.info("Technical Assistance", { description: "Contact TCWD MIS Operations Unit at ext 104." })}
-              className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-[10.5px] text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
             >
-              <HelpCircle size={13} className="text-slate-400" />
+              <HelpCircle size={12} className="text-slate-400" />
               <span>Need help?</span>
             </button>
           </div>
 
           {/* Center Form Section */}
-          <div className="w-full max-w-[390px] mx-auto my-auto py-2 lg:py-3 flex-shrink-0">
+          <div className="w-full max-w-[360px] sm:max-w-[375px] mx-auto my-auto py-1 sm:py-2">
             
             {/* Lock Icon Badge */}
-            <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-[#0038A8] mb-4">
-              <Lock size={17} className="text-[#0038A8]" />
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-[#0038A8] mb-2 sm:mb-2.5">
+              <Lock size={15} className="text-[#0038A8]" />
             </div>
 
-            <p className="text-[9.5px] font-bold tracking-[0.2em] uppercase text-slate-500 mb-1">
+            <p className="text-[8.5px] sm:text-[9px] font-bold tracking-[0.18em] uppercase text-slate-500 mb-0.5">
               WELCOME TO AQUASTAT
             </p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-0.5">
               Welcome back.
             </h2>
-            <p className="text-xs sm:text-[13px] text-slate-500 mb-5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mb-3 sm:mb-3.5">
               Sign in to your account to access your workspace.
             </p>
 
-            <form onSubmit={handleAuth} className="space-y-3.5">
+            <form onSubmit={handleAuth} className="space-y-2.5 sm:space-y-3">
               <div>
-                <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-0.5 sm:mb-1">
                   Username or email
                 </label>
                 <div className="relative">
-                  <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter your username or email"
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all placeholder:text-slate-400 font-normal"
+                    className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 bg-white text-xs sm:text-[13px] text-slate-800 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all placeholder:text-slate-400 font-normal"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-0.5 sm:mb-1">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPw ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all placeholder:text-slate-400 font-normal"
+                    className="w-full pl-8 pr-8 py-2 rounded-lg border border-slate-200 bg-white text-xs sm:text-[13px] text-slate-800 focus:outline-none focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/10 transition-all placeholder:text-slate-400 font-normal"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
-                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
@@ -713,12 +713,12 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
                     onChange={(e) => setRemember(e.target.checked)}
                     className="w-3.5 h-3.5 rounded border-slate-300 accent-[#0038A8]"
                   />
-                  <span className="text-[11px] text-slate-500">Remember this device</span>
+                  <span className="text-[10.5px] text-slate-500">Remember this device</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => toast.info("Password Recovery", { description: "Contact TCWD MIS administrator to reset credentials." })}
-                  className="text-[11px] font-semibold text-[#0038A8] hover:underline cursor-pointer"
+                  className="text-[10.5px] font-semibold text-[#0038A8] hover:underline cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -727,25 +727,24 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
               <button
                 type="submit"
                 onClick={handleAuth}
-                className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-[#0038A8] hover:bg-[#002f8f] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-[#0038A8]/20 transition-all cursor-pointer mt-2"
+                className="w-full py-2 sm:py-2.5 px-4 rounded-xl bg-[#0038A8] hover:bg-[#002f8f] text-white font-semibold text-xs sm:text-[13px] flex items-center justify-center gap-2 shadow-sm shadow-[#0038A8]/20 transition-all cursor-pointer mt-1"
               >
                 <span>Sign in to AquaStat</span>
-                <ArrowRight size={15} />
+                <ArrowRight size={14} />
               </button>
             </form>
 
-            <p className="text-center text-slate-400 mt-3 flex items-center justify-center gap-1.5" style={{ fontSize: "10px" }}>
-              <Shield size={10} className="text-slate-400" />
+            <p className="text-center text-slate-400 mt-2 flex items-center justify-center gap-1.5 text-[9px]">
+              <Shield size={9} className="text-slate-400" />
               <span>Secure access. Authorized personnel only.</span>
             </p>
 
-            <div className="mt-4 text-center text-slate-400 flex items-center justify-center gap-1" style={{ fontSize: "9px" }}>
+            <div className="mt-2 text-center text-slate-400 flex items-center justify-center gap-1 text-[9.5px] sm:text-[10px]">
               <span>Don't have access yet?</span>
               <button
                 type="button"
                 onClick={() => toast.info("Access Request", { description: "Please submit an access authorization ticket to TCWD MIS." })}
-                className="font-medium text-[#0038A8] hover:underline inline-flex items-center gap-0.5 cursor-pointer"
-                style={{ fontSize: "9px", lineHeight: "1" }}
+                className="font-medium text-[#0038A8] hover:underline inline-flex items-center gap-0.5 cursor-pointer text-[9.5px] sm:text-[10px]"
               >
                 <span>Contact your administrator</span>
                 <ArrowUpRight size={8} />
@@ -754,16 +753,15 @@ function LoginScreen({ onLogin }: { onLogin: (user: UserAccount) => void }) {
           </div>
 
           {/* Bottom Right Footer */}
-          <div className="w-full flex items-center justify-between text-slate-400 pt-3 flex-shrink-0" style={{ fontSize: "9px" }}>
-            <div>
+          <div className="w-full flex items-center justify-between text-slate-400 pt-1.5 sm:pt-2 flex-shrink-0 text-[9px] sm:text-[9.5px]">
+            <div className="leading-tight">
               <p>&copy; 2026 Tabaco City Water District</p>
-              <p className="text-slate-400/70">AquaStat DSS v2.4.1</p>
+              <p className="text-slate-400/70 text-[8px] sm:text-[8.5px]">AquaStat DSS v2.4.1</p>
             </div>
             <button
               type="button"
               onClick={() => toast.info("Data Privacy & Security", { description: "Complies with RA 10173 (Data Privacy Act of 2012)." })}
-              className="hover:text-slate-600 inline-flex items-center gap-0.5 transition-colors cursor-pointer text-slate-400"
-              style={{ fontSize: "9px", lineHeight: "1" }}
+              className="hover:text-slate-600 inline-flex items-center gap-0.5 transition-colors cursor-pointer text-slate-400 text-[9px] sm:text-[9.5px]"
             >
               <span>Privacy & security</span>
               <ArrowUpRight size={8} />
@@ -3839,20 +3837,51 @@ interface LiveForecast {
 function useWeatherData() {
   const [current, setCurrent] = useState<LiveCurrent | null>(null)
   const [forecast, setForecast] = useState<LiveForecast[]>([])
+  const [correlation, setCorrelation] = useState<{
+    summary?: {
+      rSquared: number;
+      regressionEquation: string;
+      pearsonR: number;
+    };
+    temperatureScatter?: Array<{ temp: number; demand: number; date: string; condition: string }>;
+    rainfallDualAxis?: Array<{ month: string; rainfall: number; nrw: number }>;
+  } | null>(null)
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
   const load = async () => {
     try {
-      const [cRes, fRes] = await Promise.all([
+      const [cRes, fRes, corrRes] = await Promise.all([
         fetch('/api/v1/weather/current'),
         fetch('/api/v1/weather/forecast'),
+        fetch('/api/v1/weather-correlation').catch(() => null),
       ])
       if (!cRes.ok || !fRes.ok) throw new Error('API error')
       const [cJson, fJson] = await Promise.all([cRes.json(), fRes.json()])
       setCurrent(cJson.data)
       setForecast(fJson.data)
+      if (corrRes && corrRes.ok) {
+        try {
+          const corrJson = await corrRes.json()
+          if (corrJson.success && corrJson.data) {
+            setCorrelation({
+              summary: corrJson.data.summary,
+              temperatureScatter: corrJson.data.temperatureScatter?.map((s: any) => ({
+                temp: s.tempCelsius,
+                demand: s.dailyDemandM3,
+                date: s.date,
+                condition: s.condition,
+              })),
+              rainfallDualAxis: corrJson.data.rainfallDualAxis?.map((r: any) => ({
+                month: r.month,
+                rainfall: r.rainfallMm,
+                nrw: r.nrwPercentage,
+              })),
+            })
+          }
+        } catch {}
+      }
       setLastRefresh(new Date())
       setError(null)
     } catch {
@@ -3868,7 +3897,7 @@ function useWeatherData() {
     return () => clearInterval(timer)
   }, [])
 
-  return { current, forecast, loading, error, lastRefresh, refresh: load }
+  return { current, forecast, correlation, loading, error, lastRefresh, refresh: load }
 }
 
 // ─── demand-impact calculator ─────────────────────────────────────────────────
@@ -3881,7 +3910,7 @@ function calcDemandDelta(tempC: number, rainMm: number): number {
 
 // ── SCREEN: WEATHER ────────────────────────────────────────────────────────
 function WeatherScreen() {
-  const { current, forecast, loading, error, lastRefresh, refresh } = useWeatherData()
+  const { current, forecast, correlation, loading, error, lastRefresh, refresh } = useWeatherData()
   const [selectedDay, setSelectedDay] = useState<number>(0)
 
   const WeatherIcon = ({ icon, size = 20 }: { icon: string; size?: number }) => {
@@ -4122,23 +4151,23 @@ function WeatherScreen() {
                   </div>
                 )}
               />
-              <Scatter key="scatter-temp" name="Historical Demand" data={TEMP_DEMAND} fill="#0038A8" opacity={0.7} />
+              <Scatter key="scatter-temp" name="Historical Demand" data={correlation?.temperatureScatter && correlation.temperatureScatter.length > 0 ? correlation.temperatureScatter : TEMP_DEMAND} fill="#0038A8" opacity={0.7} />
               {/* Live current point */}
               {current && (
                 <Scatter key="scatter-live" name="Current Live" data={[{ temp: current.temperature, demand: adjDemand }]} fill="#EF4444" r={6} />
               )}
               <ReferenceLine key="refline-r" stroke="#D32F2F" strokeDasharray="4 3"
                 segment={[{ x: 25, y: 5200 }, { x: 36, y: 10600 }]} strokeWidth={1.5}
-                label={{ value: 'r² = 0.72', fill: '#D32F2F', fontSize: 9, position: 'insideTopRight' }} />
+                label={{ value: correlation?.summary?.rSquared ? `r² = ${correlation.summary.rSquared}` : 'r² = 0.72', fill: '#D32F2F', fontSize: 9, position: 'insideTopRight' }} />
             </ScatterChart>
           </ResponsiveContainer>
-          <p className="text-[10px] text-slate-400 mt-1">Regression: D = 192T − 1,576 (R² = 0.72) · Telemetry correlation window: 2017–2025</p>
+          <p className="text-[10px] text-slate-400 mt-1">{correlation?.summary?.regressionEquation ? `${correlation.summary.regressionEquation} (R² = ${correlation.summary.rSquared}) · Live Supabase dim_weather telemetry` : "Regression: D = 192T − 1,576 (R² = 0.72) · Telemetry correlation window: 2017–2025"}</p>
         </ChartCard>
 
         {/* Dual-axis: Rainfall vs NRW */}
         <ChartCard title="Rainfall vs. NRW Seasonal Pattern">
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart syncId="weather-sync" data={[
+            <ComposedChart syncId="weather-sync" data={correlation?.rainfallDualAxis && correlation.rainfallDualAxis.length > 0 ? correlation.rainfallDualAxis : [
               { month: 'Oct', rainfall: 180, nrw: 27.4 }, { month: 'Nov', rainfall: 220, nrw: 28.1 },
               { month: 'Dec', rainfall: 160, nrw: 27.8 }, { month: 'Jan', rainfall: 40,  nrw: 26.4 },
               { month: 'Feb', rainfall: 20,  nrw: 25.8 }, { month: 'Mar', rainfall: 15,  nrw: 26.2 },
