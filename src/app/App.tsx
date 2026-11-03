@@ -1010,6 +1010,17 @@ function CustomerClassDrilldownModal({
   const rateRatio = (objA.effectiveRate / objB.effectiveRate).toFixed(2)
   const billRatio = (objA.avgBill / objB.avgBill).toFixed(1)
 
+  const objResidential = comparisonData.find(c => c.name === "Residential") || comparisonData[0]
+  const nonResClasses = comparisonData.filter(c => c.name !== "Residential")
+  const nonResVolShare = Number(nonResClasses.reduce((s, c) => s + c.volShare, 0).toFixed(1))
+  const nonResRevShare = Number(nonResClasses.reduce((s, c) => s + c.revShare, 0).toFixed(1))
+  const nonResRevenue = nonResClasses.reduce((s, c) => s + c.revenue, 0)
+  const billedPctOfProduction = Number(((billedVolume / (totalProduction || 1)) * 100).toFixed(1))
+  const avgTariffYield = Number((totalRevenue / (billedVolume || 1)).toFixed(2))
+  const nrwFinancialLoss = (nrwVolume * avgTariffYield) / 1_000_000
+  const commClass = comparisonData.find(c => c.name === "Commercial")
+  const govClass = comparisonData.find(c => c.name === "Government")
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
       <motion.div
@@ -1048,23 +1059,23 @@ function CustomerClassDrilldownModal({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-3 bg-white border-b border-slate-100 text-xs">
           <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
             <span className="text-[10px] text-slate-400 block font-medium">Total Billed Water</span>
-            <span className="font-mono font-bold text-slate-900 text-sm">139,499 m³</span>
-            <span className="text-[10px] text-blue-600 block">72.0% of {totalProduction.toLocaleString()} m³ produced</span>
+            <span className="font-mono font-bold text-slate-900 text-sm">{billedVolume.toLocaleString()} m³</span>
+            <span className="text-[10px] text-blue-600 block">{billedPctOfProduction}% of {totalProduction.toLocaleString()} m³ produced</span>
           </div>
           <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
             <span className="text-[10px] text-slate-400 block font-medium">Total Water Revenue</span>
-            <span className="font-mono font-bold text-emerald-600 text-sm">₱5.185 Million</span>
-            <span className="text-[10px] text-slate-500 block">Across 10,000 active meters</span>
+            <span className="font-mono font-bold text-emerald-600 text-sm">₱{(totalRevenue / 1_000_000).toFixed(3)} Million</span>
+            <span className="text-[10px] text-slate-500 block">Across {totalAccounts.toLocaleString()} active meters</span>
           </div>
           <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
             <span className="text-[10px] text-slate-400 block font-medium">Average Tariff Yield</span>
-            <span className="font-mono font-bold text-slate-900 text-sm">₱37.17 / m³</span>
+            <span className="font-mono font-bold text-slate-900 text-sm">₱{avgTariffYield.toFixed(2)} / m³</span>
             <span className="text-[10px] text-slate-500 block">Blended district-wide rate</span>
           </div>
           <div className="bg-red-50 rounded-lg p-2.5 border border-red-100">
             <span className="text-[10px] text-red-500 block font-medium">NRW System Loss</span>
-            <span className="font-mono font-bold text-red-600 text-sm">54,249 m³</span>
-            <span className="text-[10px] text-red-400 block">28.0% loss · ₱1.30M uncollected</span>
+            <span className="font-mono font-bold text-red-600 text-sm">{nrwVolume.toLocaleString()} m³</span>
+            <span className="text-[10px] text-red-400 block">{kpi.nrwPct.toFixed(1)}% loss · ₱{nrwFinancialLoss.toFixed(2)}M uncollected</span>
           </div>
         </div>
 
@@ -1118,13 +1129,13 @@ function CustomerClassDrilldownModal({
                       Narrative 1: How Total Billed Water is Divided Across Customer Classes
                     </h3>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                      Every month, TCWD produces <strong className="text-slate-800">193,748 m³</strong> of treated water. After{" "}
-                      <strong className="text-red-600">54,249 m³ (28.0%)</strong> is lost through physical leaks and unauthorized consumption (NRW), the remaining{" "}
-                      <strong className="text-blue-700 font-bold">139,499 m³ (72.0%)</strong> is delivered and billed to our <strong className="text-slate-800">10,000 customer accounts</strong>.
+                      Every month, TCWD produces <strong className="text-slate-800">{totalProduction.toLocaleString()} m³</strong> of treated water. After{" "}
+                      <strong className="text-red-600">{nrwVolume.toLocaleString()} m³ ({kpi.nrwPct.toFixed(1)}%)</strong> is lost through physical leaks and unauthorized consumption (NRW), the remaining{" "}
+                      <strong className="text-blue-700 font-bold">{billedVolume.toLocaleString()} m³ ({billedPctOfProduction}%)</strong> is delivered and billed to our <strong className="text-slate-800">{totalAccounts.toLocaleString()} customer accounts</strong>.
                     </p>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                       <strong className="text-slate-800">Key takeaway for everyone:</strong> Residential households consume more than{" "}
-                      <strong className="text-blue-700">4 out of every 5 liters</strong> of all billed water in Tabaco City (80.9%).
+                      <strong className="text-blue-700">4 out of every 5 liters</strong> of all billed water in Tabaco City ({objResidential?.volShare || 86.7}%).
                     </p>
                   </div>
                 </div>
@@ -1133,8 +1144,8 @@ function CustomerClassDrilldownModal({
               {/* Visual Proportion Bar (100% of Billed Water) */}
               <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-700">Total Billed Volume Share (100% = 139,499 m³)</span>
-                  <span className="text-xs text-slate-400 font-mono">10,000 Accounts</span>
+                  <span className="text-xs font-semibold text-slate-700">Total Billed Volume Share (100% = {billedVolume.toLocaleString()} m³)</span>
+                  <span className="text-xs text-slate-400 font-mono">{totalAccounts.toLocaleString()} Accounts</span>
                 </div>
                 <div className="h-5 rounded-lg overflow-hidden flex bg-slate-100 shadow-inner">
                   {comparisonData.map(c => (
@@ -1240,13 +1251,13 @@ function CustomerClassDrilldownModal({
                       Narrative 2: Why Water Volume Does Not Equal Revenue (Cross-Class Comparison)
                     </h3>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                      You might expect a customer class using 81% of the water to generate 81% of the revenue. But in water utility economics, it doesn't work that way!
+                      You might expect a customer class using {objResidential?.volShare || 86.7}% of the water to generate {objResidential?.volShare || 86.7}% of the revenue. But in water utility economics, it doesn't work that way!
                     </p>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                      <strong className="text-emerald-800 font-semibold">The Social Tariff System:</strong> Residential water is kept affordable (averaging <strong className="text-slate-900">₱30.86/m³</strong>) because clean water is a basic human necessity. To keep TCWD financially sustainable, Commercial and Government classes pay premium commercial rates (<strong className="text-slate-900">₱58.15 to ₱70.00/m³</strong>).
+                      <strong className="text-emerald-800 font-semibold">The Social Tariff System:</strong> Residential water is kept affordable (averaging <strong className="text-slate-900">₱{objResidential?.effectiveRate.toFixed(2) || '28.26'}/m³</strong>) because clean water is a basic human necessity. To keep TCWD financially sustainable, Commercial and Government classes pay premium commercial rates (<strong className="text-slate-900">₱{commClass?.effectiveRate.toFixed(2) || '85.27'} to ₱{govClass?.effectiveRate.toFixed(2) || '50.74'}/m³</strong>).
                     </p>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                      <strong className="text-slate-800">The Big Result:</strong> Commercial and Government accounts use only <strong className="text-slate-900 font-bold">15.7% of the water</strong>, but generate over <strong className="text-emerald-700 font-bold">27.1% (₱1.41 Million)</strong> of the district's revenue!
+                      <strong className="text-slate-800">The Big Result:</strong> Commercial, Government, and Semi-Commercial accounts use only <strong className="text-slate-900 font-bold">{nonResVolShare}% of the water</strong>, but generate over <strong className="text-emerald-700 font-bold">{nonResRevShare}% (₱{(nonResRevenue / 1_000_000).toFixed(2)} Million)</strong> of the district's revenue!
                     </p>
                   </div>
                 </div>
@@ -1294,7 +1305,7 @@ function CustomerClassDrilldownModal({
                         <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} unit="₱" />
                         <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#475569" }} axisLine={false} tickLine={false} width={105} />
                         <RTooltip content={(p: any) => <ChartTip {...p} fmt={v => `₱${v.toFixed(2)} / m³`} />} />
-                        <ReferenceLine x={37.17} stroke="#F59E0B" strokeDasharray="3 3" label={{ value: "District Avg: ₱37.17", fill: "#B45309", fontSize: 9, position: "top" }} />
+                        <ReferenceLine x={avgTariffYield} stroke="#F59E0B" strokeDasharray="3 3" label={{ value: `District Avg: ₱${avgTariffYield.toFixed(2)}`, fill: "#B45309", fontSize: 9, position: "top" }} />
                         <Bar dataKey="effectiveRate" name="Effective Rate (₱/m³)" radius={[0, 6, 6, 0]}>
                           {tariffData.map(c => <Cell key={c.name} fill={c.color} />)}
                         </Bar>
@@ -1310,7 +1321,7 @@ function CustomerClassDrilldownModal({
                   <h4 className="text-xs font-bold text-slate-800">
                     Cross-Class Revenue & Efficiency Summary Table
                   </h4>
-                  <span className="text-[11px] text-slate-500">September 2025</span>
+                  <span className="text-[11px] text-slate-500">{kpi.latestMonth || "December 2025"}</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left">
@@ -1340,9 +1351,9 @@ function CustomerClassDrilldownModal({
                           <td className="py-3 px-4 text-right font-mono font-bold text-slate-800">₱{c.effectiveRate.toFixed(2)}/m³</td>
                           <td className="py-3 px-4 text-right font-mono text-slate-700">₱{c.avgBill.toLocaleString()}/mo</td>
                           <td className="py-3 px-4 text-slate-500 text-[11px]">
-                            {c.name === "Residential" && "Volume anchor; subsidized rate for 8,240 households"}
-                            {c.name === "Commercial" && "High-tariff cross-subsidy; pays 1.88× residential rate"}
-                            {c.name === "Government" && "Highest revenue yield; ₱3,564/mo bill per connection"}
+                            {c.name === "Residential" && `Volume anchor; subsidized rate for ${c.accounts.toLocaleString()} households`}
+                            {c.name === "Commercial" && `High-tariff cross-subsidy; pays ${(c.effectiveRate / (objResidential?.effectiveRate || 1)).toFixed(2)}× residential rate`}
+                            {c.name === "Government" && `Highest revenue yield; ₱${c.avgBill.toLocaleString()}/mo bill per connection`}
                             {c.name === "Semi-Commercial" && "Neighborhood retail and small family enterprise rate"}
                           </td>
                         </tr>
